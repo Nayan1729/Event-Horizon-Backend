@@ -30,10 +30,15 @@ public class UserService {
     }
 
     public String verifyUser(User user) {
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
-        if (auth.isAuthenticated()) {
-            return this.jwtService.generateToken(user.getUsername());
+        try{
+            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+            if (auth.isAuthenticated()) {
+                return this.jwtService.generateToken(user.getUsername());
+            }
+        }catch(Exception e){
+            throw new IllegalArgumentException("Invalid username or password");
         }
+
         return "fail";
     }
 }
