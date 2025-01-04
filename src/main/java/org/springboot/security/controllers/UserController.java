@@ -31,6 +31,23 @@ public class UserController {
         }
     }
 
+    @PostMapping("/verify")
+    public ResponseEntity<?> verify(@RequestParam("token") String token) {
+        try {
+            System.out.println(token);
+            String jwtToken = userService.verifyUserEmail(token);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + jwtToken);
+
+            // Respond with token in headers and success message in the body
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body("User registered and verified successfuly. Token issued in Authorization header."); // Return JWT Token upon successful verification
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired verification token.");
+        }
+    }
+
     /**
      * Authenticates a user and returns a JWT token in the response header.
      *
@@ -58,4 +75,5 @@ public class UserController {
                     .body("Unexpected error occurred: " + e.getMessage());
         }
     }
+
 }
