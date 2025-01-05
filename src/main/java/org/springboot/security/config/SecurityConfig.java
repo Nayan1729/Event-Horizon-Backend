@@ -30,12 +30,11 @@ public class SecurityConfig  {
 
     @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("securityFilterChain");
             return http
                     .csrf(customizer->customizer.disable())
                     .authorizeHttpRequests(
                             request->request
-                                    .requestMatchers("/register","/login","/verify").permitAll()
+                                    .requestMatchers("/login","/register","/verify").permitAll()
                                     .anyRequest().authenticated())
                     .httpBasic(Customizer.withDefaults())
                     .sessionManagement(session->

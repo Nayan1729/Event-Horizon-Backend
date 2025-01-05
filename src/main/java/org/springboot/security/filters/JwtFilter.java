@@ -54,6 +54,7 @@ public class JwtFilter extends OncePerRequestFilter {
          Our task is to validate whether this token by the client in the Authorization header is
          correct or not. If it is valid then bypass the UserPasswordAuthenticationFilter .
          */
+
         System.out.println("doFilterInternal");
         String authHeader = request.getHeader("Authorization");
         String token = null;
@@ -62,6 +63,8 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             username = jwtService.extractUserName(token);
+        }else{
+            System.out.println("Error ");
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -77,6 +80,8 @@ public class JwtFilter extends OncePerRequestFilter {
                         .buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+            }else {
+                System.out.println("JWT Token invalid or expired");  // Debugging
             }
         }
         filterChain.doFilter(request, response);

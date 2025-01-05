@@ -2,6 +2,8 @@ package org.springboot.security.controllers;
 
 import org.springboot.security.entities.User;
 import org.springboot.security.services.UserService;
+import org.springboot.security.utilities.ApiException;
+import org.springboot.security.utilities.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,43 +30,49 @@ public class UserController {
      * @return The registered user.
      */
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public ResponseEntity<ApiResponse> register(@RequestBody User user) {
         try {
             User registeredUser = this.userService.registerUser(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error registering user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(201,registeredUser,"User created successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
+        }
+        catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, "An error occurred: " + e.getMessage()));
         }
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verify(@RequestParam("token") String token) {
+    public ResponseEntity<ApiResponse> verify(@RequestParam("token") String token) {
         try {
-            System.out.println(token);
+            // Verify the user and generate a JWT token
             String jwtToken = userService.verifyUserEmail(token);
+
+            // Retrieve the current user
+            User currentUser = userService.getCurrentUser();  // Assuming you have a method to get the current user
+            System.out.println(currentUser);
+            // Prepare response with JWT token in the header and user data in the body
             HttpHeaders headers = new HttpHeaders();
             headers.set("Authorization", "Bearer " + jwtToken);
 
-            // Respond with token in headers and success message in the body
+            ApiResponse response = new ApiResponse(200, currentUser, "Email verified successfully.");
+
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body("User registered and verified successfuly. Token issued in Authorization header."); // Return JWT Token upon successful verification
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired verification token.");
+                    .body(response);
+        } catch (ApiException e) {
+            // Handle API exceptions (Invalid/expired token)
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        } catch (Exception e) {
+            // Catch any other unexpected exceptions
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, "An unexpected error occurred: " + e.getMessage()));
         }
     }
 
-    /**
-     * Authenticates a user and returns a JWT token in the response header.
-     *
-     * @param user The user credentials.
-     * @return A response containing the JWT token.
-     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
+    public ResponseEntity<ApiResponse> login(@RequestBody User user) {
         try {
-            String token = userService.verifyUser(user);
+            String token = userService.login(user);
 
             // Create response headers with the token
             HttpHeaders headers = new HttpHeaders();
@@ -73,13 +81,13 @@ public class UserController {
             // Respond with token in headers and success message in the body
             return ResponseEntity.ok()
                     .headers(headers)
-                    .body("Login successful. Token issued in Authorization header.");
+                    .body(new ApiResponse(200, user, "Login successful"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Login failed: " + e.getMessage());
+                    .body(new ApiResponse(HttpStatus.UNAUTHORIZED.value(), null, "Login failed: " + e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Unexpected error occurred: " + e.getMessage());
+                    .body(new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, "An unexpected error occurred: " + e.getMessage()));
         }
     }
 

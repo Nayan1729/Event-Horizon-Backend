@@ -11,4 +11,6 @@ public interface MyUserDetailsRepository extends CrudRepository<User,String> {
    public User findByUsername(String username);
 
    User findByVerificationToken(String token);
+
+    boolean existsByUsername(String username);
 }

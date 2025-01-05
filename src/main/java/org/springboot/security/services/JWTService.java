@@ -22,8 +22,8 @@ public class JWTService {
 
 
     private final UserService userService;
-    private String secretkey = "";
-
+    private String secretKeyString = "27EE4CABC809E0F32B8BFAD9956331EA34AD2F282E1ED066D4B40D13C400BF52";
+    private SecretKey secretKey;
     public JWTService(UserService userService) {
 
         try {
@@ -32,7 +32,7 @@ public class JWTService {
             // Get the key and encode the key so that we can decode it when we use getKey()
             KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
             SecretKey sk = keyGen.generateKey();
-            secretkey = Base64.getEncoder().encodeToString(sk.getEncoded());
+            this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
@@ -56,8 +56,7 @@ public class JWTService {
     }
 
     private SecretKey getKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretkey);
-        return Keys.hmacShaKeyFor(keyBytes);
+        return secretKey;
     }
 
     public String extractUserName(String token) {
