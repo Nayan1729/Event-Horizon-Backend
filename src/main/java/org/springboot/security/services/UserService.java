@@ -1,8 +1,10 @@
 package org.springboot.security.services;
 
+import org.springboot.security.entities.Role;
 import org.springboot.security.entities.User;
 import org.springboot.security.repositories.MyUserDetailsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +25,7 @@ public class UserService {
     AuthenticationManager authenticationManager;
 
     @Autowired
+    @Lazy
     JWTService jwtService;
 
     @Autowired
@@ -31,9 +34,14 @@ public class UserService {
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
+    public User getUserByUsername(String username) {
+            return myUserDetailsRepository.findByUsername(username);
+    }
+
     public User registerUser(User user) {
         user.setPassword(this.encoder.encode(user.getPassword()));
         user.setVerified(false);  // Mark user as not verified initially
+        user.setRole(Role.USER);
         // Save the user in database first and then send token to get then verified
         String verificationToken = generateVerificationToken(user);
         System.out.println("verificationToken: " + verificationToken);

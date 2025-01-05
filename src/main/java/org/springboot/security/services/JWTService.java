@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springboot.security.entities.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,9 +21,10 @@ import java.util.function.Function;
 public class JWTService {
 
 
+    private final UserService userService;
     private String secretkey = "";
 
-    public JWTService() {
+    public JWTService(UserService userService) {
 
         try {
             // Converting the String secretKey into a Key
@@ -34,10 +36,14 @@ public class JWTService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+        this.userService = userService;
     }
 
     public String generateToken(String username) {
+        User user = userService.getUserByUsername(username);
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", user.getRole().name());
+
         return Jwts.builder()
                 .claims()
                 .add(claims)
@@ -59,12 +65,12 @@ public class JWTService {
         return extractClaim(token, Claims::getSubject);
     }
 
-    private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
         final Claims claims = extractAllClaims(token);
         return claimResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
+    public Claims extractAllClaims(String token) {
         return Jwts.parser()
                 .verifyWith(getKey())
                 .build()

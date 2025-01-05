@@ -1,6 +1,8 @@
 package org.springboot.security.entities;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 
 @Entity
@@ -13,6 +15,17 @@ public class User {
 
     private String verificationToken;  // To store the email verification token
     private boolean verified;  // To check if the user is verified
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     public User() {
         super();
@@ -74,6 +87,7 @@ public class User {
                 ", password='" + password + '\'' +
                 ", verificationToken='" + verificationToken + '\'' +
                 ", verified=" + verified +
+                ", role=" + role +
                 '}';
     }
 }
