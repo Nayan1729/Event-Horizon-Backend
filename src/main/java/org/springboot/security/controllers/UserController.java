@@ -56,7 +56,6 @@ public class UserController {
             headers.set("Authorization", "Bearer " + jwtToken);
 
             ApiResponse response = new ApiResponse(200, currentUser, "Email verified successfully.");
-
             return ResponseEntity.ok()
                     .headers(headers)
                     .body(response);
