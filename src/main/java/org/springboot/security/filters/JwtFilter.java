@@ -20,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // Every time we make a request it would pass through filters and so here this filter should only
 // be executed once per request thus OncePerRequestFilter
@@ -66,11 +67,13 @@ public class JwtFilter extends OncePerRequestFilter {
             UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(email);
             if (jwtService.validateToken(token, userDetails)){
                 Claims claims = jwtService.extractAllClaims(token);
-                String role = claims.get("role").toString();
+                List<String> roles = (List<String>) claims.get("roles");
 
-                GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+                List<GrantedAuthority> authorities = roles.stream()
+                        .map(role->new SimpleGrantedAuthority("ROLE_"+role))
+                        .collect    (Collectors.toList());
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, List.of(authority) );
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, authorities );
                 authToken.setDetails(new WebAuthenticationDetailsSource()
                         .buildDetails(request));
 
