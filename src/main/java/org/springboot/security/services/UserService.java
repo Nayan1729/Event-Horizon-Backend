@@ -13,10 +13,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -41,13 +42,13 @@ public class UserService {
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-    public User getUserByUsername(String username) {
-            return myUserDetailsRepository.findByUsername(username);
+    public User getUserByEmail(String email) {
+            return myUserDetailsRepository.findByEmail(email);
     }
 
     public User registerUser(User user) throws ApiException {
-        if (myUserDetailsRepository.existsByUsername(user.getUsername())) {
-            throw new ApiException("User already exists with the username: " + user.getUsername(), HttpStatus.BAD_REQUEST.value());
+        if (myUserDetailsRepository.existsByEmail(user.getEmail())) {
+            throw new ApiException("User already exists with the username: " + user.getEmail(), HttpStatus.BAD_REQUEST.value());
         }
         user.setPassword(this.encoder.encode(user.getPassword()));
         user.setVerified(false);  // Mark user as not verified initially
@@ -56,7 +57,7 @@ public class UserService {
         String verificationToken = generateVerificationToken(user);
         System.out.println("verificationToken: " + verificationToken);
 
-        sendVerificationEmail(user.getUsername(), verificationToken);
+        sendVerificationEmail(user.getEmail(), verificationToken);
 
         System.out.println("Email sent successfully");
 
@@ -89,7 +90,7 @@ public class UserService {
     }
 
 
-    public String verifyUserEmail(String token) throws ApiException {
+    public Map<String,Object> verifyUserEmail(String token) throws ApiException {
         User user = myUserDetailsRepository.findByVerificationToken(token);
 
         if (user != null && !user.isVerified()) {
@@ -98,7 +99,10 @@ public class UserService {
             myUserDetailsRepository.save(user);
 
             // Generate a JWT token after email verification
-            return jwtService.generateToken(user.getUsername());
+            Map<String,Object> userMap = new HashMap<>();
+            userMap.put("jwtToken",jwtService.generateToken(user.getEmail()));
+            userMap.put("user", user);
+            return userMap;
         } else {
             throw new ApiException("Invalid or already verified email",400);
         }
@@ -117,16 +121,16 @@ public class UserService {
         try {
             // Attempt to authenticate the user using the authentication manager
             Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                    new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
             );
-
+            System.out.println(auth);
             // If authentication is successful, set the authentication in the SecurityContext
             if (auth.isAuthenticated()) {
                 // Explicitly set the Authentication in the SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
                 // Generate and return the JWT token after successful authentication
-                return this.jwtService.generateToken(user.getUsername());
+                return this.jwtService.generateToken(user.getEmail());
             } else {
                 throw new ApiException("Authentication failed", 401);
             }
@@ -137,12 +141,12 @@ public class UserService {
 
 
     //Reason why we set authentication in the securityContextHolder
-    public User getCurrentUser() throws ApiException {
+    public User getLoggedInUser() throws ApiException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         System.out.println(authentication);
         if (authentication != null) {
-            String username = authentication.getName(); // Get the username from the authenticated user
-            return myUserDetailsRepository.findByUsername(username); // Return user details from the database
+            String email = authentication.getName(); // Get the username from the authenticated user
+            return myUserDetailsRepository.findByEmail(email); // Return user details from the database
         }
         throw new ApiException("No authenticated user found", HttpStatus.UNAUTHORIZED.value());
     }

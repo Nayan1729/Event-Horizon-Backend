@@ -1,20 +1,35 @@
 package org.springboot.security.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.UniqueElements;
 
 @Entity
 public class User {
 
     @Id
-    private String id;
-    private String username;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    private int id;
+
+    @Email(message = "Enter a valid email")
+
+    private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotNull(message = "Password can't be null")
     private String password;
 
+    @JsonIgnore
     private String verificationToken;  // To store the email verification token
+    @JsonIgnore
     private boolean verified;  // To check if the user is verified
+
+    @JsonIgnore
+        @Enumerated(EnumType.STRING)
+        private Role role;
 
     public Role getRole() {
         return role;
@@ -24,35 +39,34 @@ public class User {
         this.role = role;
     }
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
+
 
     public User() {
         super();
     }
 
-    public User(String id, String username, String password, String verificationToken, boolean verified) {
+    public User(int id, String email, String password, String verificationToken, boolean verified) {
         this.id = id;
-        this.username = username;
+        this.email = email;
         this.password = password;
         this.verificationToken = verificationToken;
         this.verified = verified;
     }
 
-    public String getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String username) {
+        this.email = username;
     }
 
     public String getPassword() {
@@ -83,7 +97,7 @@ public class User {
     public String toString() {
         return "User{" +
                 "id='" + id + '\'' +
-                ", username='" + username + '\'' +
+                ", username='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", verificationToken='" + verificationToken + '\'' +
                 ", verified=" + verified +
