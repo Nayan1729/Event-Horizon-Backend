@@ -1,12 +1,12 @@
 package org.springboot.security.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import org.hibernate.validator.constraints.UniqueElements;
+
+import java.util.Set;
 
 @Entity
 public class User {
@@ -27,18 +27,24 @@ public class User {
     @JsonIgnore
     private boolean verified;  // To check if the user is verified
 
+
+
     @JsonIgnore
-        @Enumerated(EnumType.STRING)
-        private Role role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles", // Join table
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles;
 
-    public Role getRole() {
-        return role;
+    public Set<Role> getRoles() {
+        return roles;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
     }
-
 
 
     public User() {
@@ -96,12 +102,12 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "id='" + id + '\'' +
-                ", username='" + email + '\'' +
+                "id=" + id +
+                ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
                 ", verificationToken='" + verificationToken + '\'' +
                 ", verified=" + verified +
-                ", role=" + role +
+                ", roles=" + roles +
                 '}';
     }
 }

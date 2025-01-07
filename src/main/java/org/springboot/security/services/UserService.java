@@ -1,8 +1,10 @@
 package org.springboot.security.services;
 
 import org.springboot.security.entities.Role;
+import org.springboot.security.entities.RoleName;
 import org.springboot.security.entities.User;
 import org.springboot.security.repositories.MyUserDetailsRepository;
+import org.springboot.security.repositories.RoleRepository;
 import org.springboot.security.utilities.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -16,9 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -39,6 +39,8 @@ public class UserService {
     @Autowired
     MyUserDetailsService userDetailsService;
 
+    @Autowired
+    RoleRepository roleRepository;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -47,23 +49,31 @@ public class UserService {
     }
 
     public User registerUser(User user) throws ApiException {
-        if (myUserDetailsRepository.existsByEmail(user.getEmail())) {
-            throw new ApiException("User already exists with the username: " + user.getEmail(), HttpStatus.BAD_REQUEST.value());
+        try {
+            if (myUserDetailsRepository.existsByEmail(user.getEmail())) {
+                throw new ApiException("User already exists with the username: " + user.getEmail(), HttpStatus.BAD_REQUEST.value());
+            }
+            user.setPassword(this.encoder.encode(user.getPassword()));
+            user.setVerified(false);  // Mark user as not verified initially
+
+            Optional<Role> userRole = roleRepository.findByName(RoleName.USER);
+
+            user.setRoles(new HashSet<>(Set.of(userRole.get())));
+            // Save the user in database first and then send token to get then verified
+            String verificationToken = generateVerificationToken(user);
+            System.out.println("verificationToken: " + verificationToken);
+
+
+            sendVerificationEmail(user.getEmail(), verificationToken);
+
+            System.out.println(user);
+
+            User registeredUser = this.myUserDetailsRepository.save(user);
+            return registeredUser;
+        }catch (Exception e) {
+            throw new ApiException(e.getMessage(), HttpStatus.BAD_REQUEST.value());
         }
-        user.setPassword(this.encoder.encode(user.getPassword()));
-        user.setVerified(false);  // Mark user as not verified initially
-        user.setRole(Role.USER);
-        // Save the user in database first and then send token to get then verified
-        String verificationToken = generateVerificationToken(user);
-        System.out.println("verificationToken: " + verificationToken);
 
-        sendVerificationEmail(user.getEmail(), verificationToken);
-
-        System.out.println("Email sent successfully");
-
-        User registeredUser = this.myUserDetailsRepository.save(user);
-        System.out.println(registeredUser);
-        return registeredUser;
     }
     // Send verification email
     private void sendVerificationEmail(String username, String verificationToken) {

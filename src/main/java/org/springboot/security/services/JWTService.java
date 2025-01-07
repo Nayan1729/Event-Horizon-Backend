@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JWTService {
@@ -40,7 +41,10 @@ public class JWTService {
     public String generateToken(String email) {
         User user = userService.getUserByEmail(email);
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
+        //Put roles in claims
+        claims.put("roles", user.getRoles().stream()
+                .map(role -> role.getName().name()) // Convert Role enum to String
+                .collect(Collectors.toList()));
 
         return Jwts.builder()
                 .claims()

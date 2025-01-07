@@ -44,9 +44,7 @@ public class UserController {
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
         }
-        catch (Exception e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, "An error occurred: " + e.getMessage()));
-        }
+
     }
 
     @PostMapping("/verify")
