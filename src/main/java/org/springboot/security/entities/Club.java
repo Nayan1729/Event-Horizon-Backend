@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -18,7 +19,8 @@ import java.util.Set;
 public class Club {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int club_id;
+    @Column(name = "club_id")
+    private int clubId;
 
     // Applying the validation on the DTO so no need for validations here
     @Email
@@ -31,9 +33,13 @@ public class Club {
     @Column(name = "club_icon")
     private String icon;
 
+    @Column(name = "club_registration_status")
+    private String status;
+
     @JsonIgnore
     @OneToMany(mappedBy = "club",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private Set<ClubMembers> clubMembers = new HashSet<>();
 
     private LocalDate club_registeredAt = LocalDate.now();
+    private Date updatedAt;
 }

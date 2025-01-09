@@ -9,6 +9,7 @@ import org.springboot.security.utilities.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,35 +46,37 @@ public class UserService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public User getUserByEmail(String email) {
-            return myUserDetailsRepository.findByEmail(email);
+            return myUserDetailsRepository.findByEmail(email).get();
     }
 
-    public User registerUser(User user) throws ApiException {
-        try {
-            if (myUserDetailsRepository.existsByEmail(user.getEmail())) {
-                throw new ApiException("User already exists with the username: " + user.getEmail(), HttpStatus.BAD_REQUEST.value());
+    public User registerUser(User user) throws ApiException,MailAuthenticationException {
+        try{
+            User registeredUser = null;
+            Optional<User> existingUser = myUserDetailsRepository.findByEmail(user.getEmail());
+            if (existingUser.isPresent()) {
+                if(existingUser.get().isVerified()){
+                    throw new ApiException("User already exists",HttpStatus.BAD_REQUEST.value());
+                }
+                user = existingUser.get();
             }
-            user.setPassword(this.encoder.encode(user.getPassword()));
-            user.setVerified(false);  // Mark user as not verified initially
 
-            Optional<Role> userRole = roleRepository.findByName(RoleName.USER);
+                user.setPassword(this.encoder.encode(user.getPassword()));
+                user.setVerified(false);  // Mark user as not verified initially
+                Optional<Role> userRole = roleRepository.findByName(RoleName.USER);
 
-            user.setRoles(new HashSet<>(Set.of(userRole.get())));
-            // Save the user in database first and then send token to get then verified
-            String verificationToken = generateVerificationToken(user);
-            System.out.println("verificationToken: " + verificationToken);
+                user.setRoles(new HashSet<>(Set.of(userRole.get())));
+                // Save the user in database first and then send token to get then verified
+                String verificationToken = generateVerificationToken(user);
 
+                sendVerificationEmail(user.getEmail(), verificationToken);
+                System.out.println(user);
 
-            sendVerificationEmail(user.getEmail(), verificationToken);
+                registeredUser = this.myUserDetailsRepository.save(user);
 
-            System.out.println(user);
-
-            User registeredUser = this.myUserDetailsRepository.save(user);
             return registeredUser;
         }catch (Exception e) {
             throw new ApiException(e.getMessage(), HttpStatus.BAD_REQUEST.value());
         }
-
     }
     // Send verification email
     private void sendVerificationEmail(String username, String verificationToken) {
@@ -156,7 +159,7 @@ public class UserService {
         System.out.println(authentication);
         if (authentication != null) {
             String email = authentication.getName(); // Get the username from the authenticated user
-            return myUserDetailsRepository.findByEmail(email); // Return user details from the database
+            return myUserDetailsRepository.findByEmail(email).get(); // Return user details from the database
         }
         throw new ApiException("No authenticated user found", HttpStatus.UNAUTHORIZED.value());
     }

@@ -3,16 +3,13 @@ package org.springboot.security.controllers;
 import jakarta.validation.Valid;
 import org.springboot.security.dtos.RegisterClubRequest;
 import org.springboot.security.entities.Club;
-import org.springboot.security.entities.User;
 import org.springboot.security.entities.UserPrincipal;
 import org.springboot.security.services.ClubService;
 import org.springboot.security.services.JWTService;
 import org.springboot.security.utilities.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,26 +21,27 @@ public class ClubController{
     @Autowired
     JWTService jwtService;
 
+
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> registerClub(@RequestBody @Valid RegisterClubRequest request ) {
-        Club registeredClub;
+    public ResponseEntity<ApiResponse> registerClubRequest(@RequestBody @Valid RegisterClubRequest request ) {
+
         try {
             UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String email = principal.getUsername();
-
-            System.out.println(principal);
-            System.out.println(email);
-            // As soon as we get the DTO we map it with its corresponding entity after some validations in the Service layer
-            registeredClub = this.clubService.registerClub(request, principal.getUsername());
-            String jwtToken = this.jwtService.generateToken(principal.getUsername());
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + jwtToken);
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body(new ApiResponse(500, null, e.getMessage()));
+            System.out.println("EMAIL :"+email );
+            // As soon as we get the ClubRequest(or a DTO) we map it with its corresponding entity after some validations in the Service layer
+            Club registeredClub = this.clubService.registerClub(request,email);
+            return ResponseEntity.status(201).body(new ApiResponse(201, registeredClub, "Club registered successfully and updated the user role"));
+        } catch (Exception e){
+            return ResponseEntity.status(500).body(new ApiResponse(500, null, e.getMessage()));
         }
-        return ResponseEntity.status(201).body(new ApiResponse(201, registeredClub, "Club registered successfully and upadted the user role"));
     }
+
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @GetMapping("/")
+//    public ResponseEntity<ApiResponse>  {}
+
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @GetMapping("")

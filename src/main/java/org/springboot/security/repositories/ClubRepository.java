@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ClubRepository extends JpaRepository<Club, Long> {
-    public Optional<Club> findClubByName(String name);
+    public Optional<Club> findByName(String name);
+    public Optional<Club> findByNameAndStatus(String name, String status);
 
+    public Optional<Club> findByClubId(int id);
 }

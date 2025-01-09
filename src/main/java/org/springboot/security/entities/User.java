@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.validator.constraints.UniqueElements;
 import org.springframework.web.service.annotation.GetExchange;
 
 import java.util.HashSet;
@@ -27,6 +28,7 @@ public class User {
     @Email(message = "Enter a valid email")
 
     private String email;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotNull(message = "Password can't be null")
     private String password;
@@ -35,8 +37,6 @@ public class User {
     private String verificationToken;  // To store the email verification token
     @JsonIgnore
     private boolean verified;  // To check if the user is verified
-
-
 
     @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
@@ -50,4 +50,16 @@ public class User {
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL,mappedBy = "user")
     private Set<ClubMembers> clubMembers;
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", email='" + email + '\'' +
+                ", password='" + password + '\'' +
+                ", verificationToken='" + verificationToken + '\'' +
+                ", verified=" + verified +
+                ", roles=" + roles +
+                '}';
+    }
 }
