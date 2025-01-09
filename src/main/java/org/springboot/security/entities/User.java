@@ -5,9 +5,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.springframework.web.service.annotation.GetExchange;
 
+import java.util.HashSet;
 import java.util.Set;
 
+@Getter
+@Setter
 @Entity
 public class User {
 
@@ -15,6 +23,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private int id;
 
+    @Column(unique = true, nullable = false,name = "user_email")
     @Email(message = "Enter a valid email")
 
     private String email;
@@ -38,76 +47,7 @@ public class User {
     )
     private Set<Role> roles;
 
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-
-    public User() {
-        super();
-    }
-
-    public User(int id, String email, String password, String verificationToken, boolean verified) {
-        this.id = id;
-        this.email = email;
-        this.password = password;
-        this.verificationToken = verificationToken;
-        this.verified = verified;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String username) {
-        this.email = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getVerificationToken() {
-        return verificationToken;
-    }
-
-    public void setVerificationToken(String verificationToken) {
-        this.verificationToken = verificationToken;
-    }
-
-    public boolean isVerified() {
-        return verified;
-    }
-
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-    }
-
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
-                ", verificationToken='" + verificationToken + '\'' +
-                ", verified=" + verified +
-                ", roles=" + roles +
-                '}';
-    }
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL,mappedBy = "user")
+    private Set<ClubMembers> clubMembers;
 }
