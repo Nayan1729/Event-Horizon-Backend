@@ -1,5 +1,6 @@
 package org.springboot.security.controllers.admin;
 
+import lombok.RequiredArgsConstructor;
 import org.springboot.security.entities.Club;
 import org.springboot.security.services.ClubService;
 import org.springboot.security.utilities.ApiException;
@@ -12,12 +13,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/admin/club-request")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    @Autowired
-    ClubService clubService;
+
+    private final ClubService clubService;
 
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse> approveClubRequest(@PathVariable int id) throws ApiException{

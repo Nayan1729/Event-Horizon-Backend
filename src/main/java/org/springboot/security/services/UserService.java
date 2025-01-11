@@ -59,7 +59,6 @@ public class UserService {
                 }
                 user = existingUser.get();
             }
-
                 user.setPassword(this.encoder.encode(user.getPassword()));
                 user.setVerified(false);  // Mark user as not verified initially
                 Optional<Role> userRole = roleRepository.findByName(RoleName.USER);
@@ -128,15 +127,13 @@ public class UserService {
         myUserDetailsRepository.save(user);  // Store token in DB
         return token;
     }
-
-
     public String login(User user) throws ApiException {
         try {
             // Attempt to authenticate the user using the authentication manager
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())
             );
-            System.out.println(auth);
+            System.out.println("Auth:"+auth);
             // If authentication is successful, set the authentication in the SecurityContext
             if (auth.isAuthenticated()) {
                 // Explicitly set the Authentication in the SecurityContext
@@ -153,7 +150,7 @@ public class UserService {
     }
 
 
-    //Reason why we set authentication in the securityContextHolder
+    //Reason why we set authentication in the securityContextHolder so as to get it .
     public User getLoggedInUser() throws ApiException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         System.out.println(authentication);
