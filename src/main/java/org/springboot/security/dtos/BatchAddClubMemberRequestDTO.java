@@ -2,7 +2,7 @@ package org.springboot.security.dtos;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import org.springboot.security.entities.ClubMembers;
+import org.springboot.security.entities.ClubMember;
 
 import java.util.List;
 
@@ -10,6 +10,6 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 public class BatchAddClubMemberRequestDTO{
-    private List<ClubMembers> addedMembers;
+    private List<ClubMember> addedMembers;
     private List<FailedMemberResponse> failedMembers;
 }

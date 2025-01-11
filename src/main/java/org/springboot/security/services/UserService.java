@@ -3,6 +3,7 @@ package org.springboot.security.services;
 import org.springboot.security.entities.Role;
 import org.springboot.security.entities.RoleName;
 import org.springboot.security.entities.User;
+import org.springboot.security.entities.UserPrincipal;
 import org.springboot.security.repositories.MyUserDetailsRepository;
 import org.springboot.security.repositories.RoleRepository;
 import org.springboot.security.utilities.ApiException;
@@ -152,11 +153,11 @@ public class UserService {
 
     //Reason why we set authentication in the securityContextHolder so as to get it .
     public User getLoggedInUser() throws ApiException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println(authentication);
-        if (authentication != null) {
-            String email = authentication.getName(); // Get the username from the authenticated user
-            return myUserDetailsRepository.findByEmail(email).get(); // Return user details from the database
+        UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String email = principal.getUsername();
+        System.out.println("email:"+email);
+        if(email != null){
+            return myUserDetailsRepository.findByEmail(email).get();
         }
         throw new ApiException("No authenticated user found", HttpStatus.UNAUTHORIZED.value());
     }

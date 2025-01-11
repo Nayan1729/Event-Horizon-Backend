@@ -79,7 +79,6 @@ public class ClubService{
         Club approvedClub = this.clubRepository.save(club.get());
         return approvedClub;
     }
-
     public BatchAddClubMemberRequestDTO addClubMembers(int clubId, List<AddMembersRequestDTO>membersRequest) throws ApiException {
             Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
 
@@ -87,7 +86,7 @@ public class ClubService{
                 throw new ApiException("No club with the given id found",404);
             }
             Club club = existingClub.get();
-            List<ClubMembers> addedMembers = new ArrayList<>();
+            List<ClubMember> addedMembers = new ArrayList<>();
             List<FailedMemberResponse> failedMemberResponses = new ArrayList<>();
 
             for (AddMembersRequestDTO member : membersRequest){
@@ -109,7 +108,7 @@ public class ClubService{
                         failedMemberResponses.add(new FailedMemberResponse(member.getEmail() , "User with this email already exists"));
                         continue;
                     }
-                    ClubMembers newMember = new ClubMembers();
+                    ClubMember newMember = new ClubMember();
                     newMember.setClub(club);
                     newMember.setUser(user);
                     newMember.setDesignation(member.getDesignation());
@@ -118,5 +117,16 @@ public class ClubService{
                     addedMembers.add(newMember);
             }
            return new BatchAddClubMemberRequestDTO(addedMembers,failedMemberResponses);
+    }
+
+    public List<Event> getClubEvents(int clubId) throws ApiException {
+        Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
+        if(!existingClub.isPresent()){
+            throw new ApiException("No club with the given id found",404);
+        }
+        Club club = existingClub.get();
+        List<Event> events = new ArrayList<>();
+
+        return events;
     }
 }

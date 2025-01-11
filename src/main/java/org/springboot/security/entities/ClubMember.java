@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @ToString
 @Entity
-public class ClubMembers {
+public class ClubMember {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private int id ;

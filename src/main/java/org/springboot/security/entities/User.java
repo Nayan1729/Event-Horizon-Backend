@@ -5,14 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
-import org.hibernate.validator.constraints.UniqueElements;
-import org.springframework.web.service.annotation.GetExchange;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -49,7 +44,7 @@ public class User {
 
     @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL,mappedBy = "user")
-    private Set<ClubMembers> clubMembers;
+    private Set<ClubMember> clubMembers;
 
     @Override
     public String toString() {
