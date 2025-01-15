@@ -1,5 +1,6 @@
 package org.springboot.security.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springboot.security.entities.Role;
 import org.springboot.security.entities.RoleName;
 import org.springboot.security.entities.User;
@@ -8,6 +9,7 @@ import org.springboot.security.repositories.MyUserDetailsRepository;
 import org.springboot.security.repositories.RoleRepository;
 import org.springboot.security.utilities.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.MailAuthenticationException;
@@ -23,26 +25,27 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
-    MyUserDetailsRepository myUserDetailsRepository;
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+    private final MyUserDetailsRepository myUserDetailsRepository;
+
+    private final AuthenticationManager authenticationManager;
 
     @Autowired
     @Lazy
-    JWTService jwtService;
+    private JWTService jwtService;
 
-    @Autowired
-    private JavaMailSender emailSender; // Spring Mail
+    private final JavaMailSender emailSender; // Spring Mail
 
-    @Autowired
-    MyUserDetailsService userDetailsService;
 
-    @Autowired
-    RoleRepository roleRepository;
+    private final  MyUserDetailsService userDetailsService;
+
+    @Value("${mail.email}")
+    private String setFromEmail;
+
+  private final  RoleRepository roleRepository;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -90,7 +93,7 @@ public class UserService {
         email.setTo(username); // Assuming the username is the email
         email.setSubject(subject);
         email.setText(message);
-        email.setFrom("nayanthacker248@gmail.com"); // Replace with your email
+        email.setFrom(setFromEmail);// Replace with your email
 
         // Send the email
         try {

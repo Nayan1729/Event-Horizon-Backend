@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.springboot</groupId>
-    <artifactId>security</artifactId>
+    <artifactId>event_horizon</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>security</name>
     <description>security</description>

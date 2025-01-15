@@ -3,12 +3,16 @@ package org.springboot.security.services;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 import org.springboot.security.entities.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,23 +22,22 @@ import java.util.stream.Collectors;
 
 @Service
 public class JWTService {
-
-
     private final UserService userService;
-    private String secretKeyString = "27EE4CABC809E0F32B8BFAD9956331EA34AD2F282E1ED066D4B40D13C400BF52";
+    @Value("${secret.key.string}")
+    private String secretKeyString;
     private SecretKey secretKey;
+    @PostConstruct
+    public void init() {
+        if (secretKeyString == null || secretKeyString.isEmpty()) {
+            throw new IllegalArgumentException("secret.key.string is not configured properly.");
+        }
+
+        // Ensure the secret key is valid for HMAC-SHA256
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
+        System.out.println("Secret key initialized successfully.");
+    }
     public JWTService(UserService userService) {
 
-        try {
-            // Converting the String secretKey into a Key
-            //make a key generator for HmacSHA
-            // Get the key and encode the key so that we can decode it when we use getKey()
-            KeyGenerator keyGen = KeyGenerator.getInstance("HmacSHA256");
-            SecretKey sk = keyGen.generateKey();
-            this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
         this.userService = userService;
     }
 

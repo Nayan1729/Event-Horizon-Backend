@@ -7,6 +7,7 @@ import org.springboot.security.utilities.ApiException;
 import org.springboot.security.utilities.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class UserController {
 
     @Autowired
+    @Lazy
     private UserService userService;
 
     @Autowired
