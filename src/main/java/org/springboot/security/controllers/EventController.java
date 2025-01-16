@@ -2,6 +2,7 @@ package org.springboot.security.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springboot.security.dtos.EventResponseDTO;
 import org.springboot.security.entities.Event;
 import org.springboot.security.services.EventService;
 import org.springboot.security.utilities.ApiException;
@@ -11,16 +12,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/clubs/{clubId}/events")
 public class EventController {
 
     private final EventService eventService;
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
-    @PostMapping
+    @PostMapping("/clubs/{clubId}/events")
     public ResponseEntity<ApiResponse> createEvent(@PathVariable int clubId,@RequestBody @Valid Event event) {
         try{
             Event registeredEvent = eventService.registerEvent(clubId, event);
@@ -31,7 +33,7 @@ public class EventController {
     }
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
-    @DeleteMapping("/{eventId}")
+    @DeleteMapping("/clubs/{clubId}/events/{eventId}")
     public ResponseEntity<ApiResponse> deleteEvent(@PathVariable int clubId , @PathVariable int eventId) {
         try{
                 this.eventService.deleteEvent(clubId,eventId);
@@ -41,14 +43,39 @@ public class EventController {
         }
     }
 
-    @PreAuthorize("hasRole('CLUB_ADMIN')")
-    @GetMapping("/{eventId}")
-    public ResponseEntity<ApiResponse> getEvent(@PathVariable int clubId,@PathVariable int eventId){
+
+    @GetMapping("events/{eventId}")
+    public ResponseEntity<ApiResponse> getEvent(@PathVariable int eventId){
         try{
-            Event event  = this.eventService.getEvent(clubId,eventId);
+            EventResponseDTO event  = this.eventService.getEvent(eventId);
             System.out.println(event);
+
             return ResponseEntity.status(200).body(new ApiResponse(200,event,"Event fetched successfully"));
         }catch (ApiException e ){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/events")
+    public ResponseEntity<ApiResponse> getAllUpcomingEvents() {
+        try {
+            List<EventResponseDTO> upcomingEvents =  this.eventService.getAllUpcomingEvents();
+            System.out.println(upcomingEvents);
+            if(upcomingEvents.isEmpty()){
+                throw new ApiException("No upcoming events found" , 404);
+            }
+            return ResponseEntity.status(200).body(new ApiResponse(200,upcomingEvents,"Upcoming events fetched successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/events/{eventId}/{eventStatus}")
+    public ResponseEntity<ApiResponse> updateEventStatus(@PathVariable String eventStatus, @PathVariable int eventId){
+        try {
+            this.eventService.changeEventStatus(eventId,eventStatus);
+            return ResponseEntity.status(200).body(new ApiResponse(200,eventId,"Event status changed successfully"));
+        }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
     }

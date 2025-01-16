@@ -66,11 +66,11 @@ public class JwtFilter extends OncePerRequestFilter {
             if (jwtService.validateToken(token, userDetails)){
                 Claims claims = jwtService.extractAllClaims(token);
                 List<String> roles = (List<String>) claims.get("roles");
-
+                System.out.println("roles: " + roles);
                 List<GrantedAuthority> authorities = roles.stream()
                         .map(role->new SimpleGrantedAuthority("ROLE_"+role))
                         .collect    (Collectors.toList());
-
+                System.out.println("authorities: " + authorities);
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, authorities );
                 authToken.setDetails(new WebAuthenticationDetailsSource()
                         .buildDetails(request));

@@ -21,7 +21,6 @@ public class Club {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "club_id")
     private int clubId;
-
     // Applying the validation on the DTO so no need for validations here
     @Email
     @Column(name = "club_email")
@@ -36,7 +35,7 @@ public class Club {
     @Column(name = "club_registration_status")
     private String status;
 
-    @JsonIgnore
+    @JsonIgnoreProperties("club")
     @OneToMany(mappedBy = "club",cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private Set<ClubMember> clubMembers = new HashSet<>();
 
@@ -47,7 +46,9 @@ public class Club {
     Event -> Club -> Event -> Club ...
     @JsonBackReference tells Jackson to ignore the club field when serializing the Event object, breaking the recursion.
 
+    Best is to use the JsonIgnoreProperties
      */
+
     @JsonIgnoreProperties("club")
     @OneToMany(mappedBy = "club",cascade = CascadeType.ALL)
     private Set<Event> events = new HashSet<>();

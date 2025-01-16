@@ -46,6 +46,10 @@ public class User {
     @OneToMany(cascade = CascadeType.ALL,mappedBy = "user")
     private Set<ClubMember> clubMembers;
 
+    @JsonIgnore
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+    private Set<RegisterForEvent> eventRegitrations ;
+
     @Override
     public String toString() {
         return "User{" +

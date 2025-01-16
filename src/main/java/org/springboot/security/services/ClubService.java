@@ -1,10 +1,7 @@
 package org.springboot.security.services;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springboot.security.dtos.BatchAddClubMemberRequestDTO;
-import org.springboot.security.dtos.AddMembersRequestDTO;
-import org.springboot.security.dtos.FailedMemberResponse;
-import org.springboot.security.dtos.RegisterClubRequest;
+import org.springboot.security.dtos.*;
 import org.springboot.security.entities.*;
 import org.springboot.security.repositories.ClubRepository;
 import org.springboot.security.repositories.MyUserDetailsRepository;
@@ -14,11 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ClubService{
 
+    //Fix the output of the adding clubMembers
     private final ClubRepository clubRepository;
     private final ModelMapper modelMapper;
     private final RoleRepository roleRepository;
@@ -119,14 +118,46 @@ public class ClubService{
            return new BatchAddClubMemberRequestDTO(addedMembers,failedMemberResponses);
     }
 
-    public List<Event> getClubEvents(int clubId) throws ApiException {
+    public Set<EventSummaryDTO> getClubEvents(int clubId) throws ApiException {
         Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
         if(!existingClub.isPresent()){
             throw new ApiException("No club with the given id found",404);
         }
         Club club = existingClub.get();
-        List<Event> events = new ArrayList<>();
+        Set<Event> events = club.getEvents();
+        if(events.isEmpty()){
+            throw new ApiException("No club events found",404);
+        }
 
-        return events;
+        // Filter and map pending events
+        return events.stream()
+                .map(event -> {
+                    int pendingCount = (int) event.getRegisterForEvents().stream()
+                            .filter(registration -> "PENDING".equals(registration.getStatus()))
+                            .count();
+
+
+                        EventSummaryDTO eventSummary = modelMapper.map(event, EventSummaryDTO.class);
+                        eventSummary.setPendingRegistrations(pendingCount); // Set the derived field
+                        return eventSummary;
+
+                     // Skip events with no pending registrations
+                })
+                .filter(Objects::nonNull) // Remove null values from skipped events
+                .collect(Collectors.toSet());
+    }
+
+    public List<ClubDTO> getAllClubs()throws ApiException {
+        List<Club> clubs = this.clubRepository.findByStatus("APPROVED")
+                .orElseThrow(()->new ApiException("No clubs found" , 404));
+        return clubs
+                .stream()
+                 .map(club -> {
+                   ClubDTO clubDTO = modelMapper.map(club, ClubDTO.class);
+                   clubDTO.setMembersCount(club.getClubMembers().size());
+                   clubDTO.setEventsCount(club.getEvents().size());
+                   return clubDTO;
+                })
+                .collect(Collectors.toList());
     }
 }

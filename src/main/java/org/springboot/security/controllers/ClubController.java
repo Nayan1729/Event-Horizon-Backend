@@ -2,12 +2,12 @@ package org.springboot.security.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springboot.security.dtos.AddMembersRequestDTO;
-import org.springboot.security.dtos.BatchAddClubMemberRequestDTO;
-import org.springboot.security.dtos.RegisterClubRequest;
+import org.springboot.security.dtos.*;
 import org.springboot.security.entities.Club;
+import org.springboot.security.entities.Event;
 import org.springboot.security.entities.UserPrincipal;
 import org.springboot.security.services.ClubService;
+import org.springboot.security.services.EventService;
 import org.springboot.security.services.JWTService;
 import org.springboot.security.utilities.ApiException;
 import org.springboot.security.utilities.ApiResponse;
@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
@@ -25,8 +26,17 @@ import java.util.List;
 public class ClubController{
 
     private  final ClubService clubService;
+    private final EventService eventService;
 
-
+    @GetMapping
+    public ResponseEntity<ApiResponse> getAllClubs(){
+        try{
+            List<ClubDTO> clubDtos = this.clubService.getAllClubs();
+            return ResponseEntity.status(200).body(new ApiResponse(200,clubDtos,"Club List fetched Successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
+        }
+    }
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> registerClubRequest(@RequestBody @Valid RegisterClubRequest request ) {
@@ -61,9 +71,9 @@ public class ClubController{
     }
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
-    @GetMapping("/{id}/events")
-    public ResponseEntity<ApiResponse> getEvents(){
-        return ResponseEntity.status(200).body(new ApiResponse(200,null,"Events fetched Successfully"));
+    @GetMapping("/{clubId}/events")
+    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId) throws ApiException {
+        Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
+        return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
     }
-
 }
