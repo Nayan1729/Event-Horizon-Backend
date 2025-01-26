@@ -57,12 +57,9 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "id=" + id +
                 ", email='" + email + '\'' +
                 ", password='" + password + '\'' +
-                ", verificationToken='" + verificationToken + '\'' +
-                ", verified=" + verified +
-                ", roles=" + roles +
+
                 '}';
     }
 }

@@ -19,7 +19,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/clubs")
+@RequestMapping("api/v1/clubs")
 public class ClubController{
 
     private  final ClubService clubService;

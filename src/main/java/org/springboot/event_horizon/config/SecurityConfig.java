@@ -1,4 +1,5 @@
 package org.springboot.event_horizon.config;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springboot.event_horizon.filters.JwtFilter;
 import org.springboot.event_horizon.services.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +13,19 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
+@EnableWebSecurity
 public class SecurityConfig  {
 
     @Autowired
@@ -29,18 +36,22 @@ public class SecurityConfig  {
     private JwtFilter jwtFilter;
 
     @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-            return http
-                    .csrf(customizer->customizer.disable())
-                    .authorizeHttpRequests(
-                            request->request
-                                    .requestMatchers("/login","/register","/verify").permitAll()
-                                    .anyRequest().authenticated())
-                    .httpBasic(Customizer.withDefaults())
-                    .sessionManagement(session->
-                            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                    .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                    .build();
+            public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomCorsConfiguration customCorsConfiguration) throws Exception {
+                return http
+                        .csrf(customizer->customizer.disable())
+                        .authorizeHttpRequests(
+                                auth->auth
+                                        .requestMatchers("/api/v1/register").permitAll()
+                                        .requestMatchers("/api/v1/login").permitAll()
+                                        .requestMatchers("/api/v1/verify").permitAll()
+                                        .requestMatchers("/api/v1/resend-email").permitAll()
+                                        .anyRequest().authenticated()
+                        )
+                        .cors(c->c.configurationSource(customCorsConfiguration))
+                        .sessionManagement(session->
+                                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                        .build();
         // Just for reference all of there are functional Interfaces and hence we are able to use lambda expressions
         // This disables the csrf token requirement for the put,post requests
         // As csrf is disabled we can make the put post request without authentication so authenticate   any http request
@@ -115,4 +126,6 @@ public class SecurityConfig  {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+
 }

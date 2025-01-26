@@ -10,4 +10,5 @@ public class ClubDTO {
     private String icon;
     private int membersCount;
     private int eventsCount;
+    private String email;
 }

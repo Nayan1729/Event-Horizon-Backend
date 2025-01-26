@@ -42,6 +42,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     ApplicationContext context;
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return path.equals("/api/v1/login") || path.equals("/api/v1/register") || path.equals("/api/v1/verify");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -55,16 +60,16 @@ public class JwtFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
         String token = null;
         String email = null;
-
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
             email = jwtService.extractEmail(token);
         }
-
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            System.out.println("email: " + email);
             UserDetails userDetails = context.getBean(MyUserDetailsService.class).loadUserByUsername(email);
             if (jwtService.validateToken(token, userDetails)){
                 Claims claims = jwtService.extractAllClaims(token);
+                System.out.println("doFilterInternal email!=null");
                 List<String> roles = (List<String>) claims.get("roles");
                 System.out.println("roles: " + roles);
                 List<GrantedAuthority> authorities = roles.stream()

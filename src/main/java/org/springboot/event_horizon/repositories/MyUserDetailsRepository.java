@@ -11,7 +11,7 @@ public interface MyUserDetailsRepository extends CrudRepository<User,String> {
 
    public Optional<User> findByEmail(String email);
 
-   User findByVerificationToken(String token);
+   Optional<User> findByVerificationToken(String token);
 
     boolean existsByEmail(String email);
 }

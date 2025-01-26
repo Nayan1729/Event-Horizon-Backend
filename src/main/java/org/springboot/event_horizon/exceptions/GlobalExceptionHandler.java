@@ -4,6 +4,7 @@ import org.springboot.event_horizon.utilities.ApiException;
 import org.springboot.event_horizon.utilities.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,20 +26,28 @@ public class GlobalExceptionHandler {
         errors.put("message", ex.getBindingResult().getFieldError().getDefaultMessage());
         return ResponseEntity.status(400).body(new ApiResponse(ex.getStatusCode().value(),errors,"Errors Occured check the data"));
     }
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseBody
+    public ResponseEntity<ApiResponse> handleBadCredentialsException(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponse(HttpStatus.UNAUTHORIZED.value(), null, "Invalid email or password"));
+    }
 
     @ExceptionHandler(ApiException.class)
     @ResponseBody
     public ResponseEntity<ApiResponse> handleApiException(ApiException ex) {
+        System.out.println(" Global ApiException: " + ex.getMessage());
         ApiResponse response = new ApiResponse(ex.getStatusCode(), null, ex.getMessage());
         return ResponseEntity.status(ex.getStatusCode()).body(response);
     }
 
 
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<ApiResponse> handleException(Exception ex) {
+        System.out.println("Got Exception Exception e"+ ex.getMessage());
         ApiResponse response = new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), null, "An unexpected error occurred: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
-
