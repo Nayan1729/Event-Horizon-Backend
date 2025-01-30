@@ -29,7 +29,7 @@ public class ClubMember {
     private User user ;
 
     @NotNull
-    String designation ;
+    String designation;
 
     private LocalDateTime joinedAt  = LocalDateTime.now() ;
 }

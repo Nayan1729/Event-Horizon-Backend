@@ -1,6 +1,7 @@
 package org.springboot.event_horizon.controllers;
 
 import jakarta.validation.Valid;
+import org.springboot.event_horizon.dtos.AuthDTO;
 import org.springboot.event_horizon.dtos.OtpDto;
 import org.springboot.event_horizon.dtos.ResendEmailDTO;
 import org.springboot.event_horizon.entities.User;
@@ -61,8 +62,8 @@ public class UserController {
     public ResponseEntity<ApiResponse> verify(@RequestBody OtpDto otpDto){
         try {
             // Verify the user and generate a JWT token
-            System.out.println(otpDto.otp);
-            Map<String,Object> verifyResponse= userService.verifyUserEmail(otpDto.otp);
+            System.out.println(otpDto.getOtp());
+            Map<String,Object> verifyResponse= userService.verifyUserEmail(otpDto.getOtp());
             System.out.println(verifyResponse);
             User currentUser = (User) (verifyResponse.get("user"));
             String jwtToken = (String) verifyResponse.get("jwtToken");
@@ -120,6 +121,15 @@ public class UserController {
         try {
             this.userService.resendVerificationEmail(emailDTO.email);
             return ResponseEntity.status(200).body(new ApiResponse(200,null,"Email resent successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+    @GetMapping("/isAuthenticated")
+    public ResponseEntity<ApiResponse> isAuthenticatedUser(){
+        try{
+            AuthDTO authDTO = this.userService.isAutenticated();
+            return ResponseEntity.ok().body(new ApiResponse(200,authDTO,"User authenticated successfully"));
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }

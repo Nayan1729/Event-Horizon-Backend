@@ -3,10 +3,13 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springboot.event_horizon.dtos.*;
 import org.springboot.event_horizon.entities.*;
+import org.springboot.event_horizon.repositories.ClubMemberRepository;
 import org.springboot.event_horizon.repositories.ClubRepository;
 import org.springboot.event_horizon.repositories.MyUserDetailsRepository;
 import org.springboot.event_horizon.repositories.RoleRepository;
 import org.springboot.event_horizon.utilities.ApiException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,9 @@ public class ClubService{
     private final MyUserDetailsRepository userDetailsRepository;
     private final MyUserDetailsRepository myUserDetailsRepository;
     private final MyUserDetailsRepository userRepository;
+    private final ClubMemberRepository clubMemberRepository;
+    @Autowired  @Lazy
+    private EventService eventService;
 
     public Club registerClub(RegisterClubRequest request, String email) throws ApiException {
         try{
@@ -160,4 +166,40 @@ public class ClubService{
                 })
                 .collect(Collectors.toList());
     }
+
+    public int getClubIdByEmail(String email) throws ApiException {
+        if(email == null || email.isEmpty()){
+            throw new ApiException("Email cannot be empty",400);
+        }
+        return clubRepository.findByEmail(email).getClubId();
+    }
+
+
+    public ClubDetailsDTO getClubDetails(int clubId) throws ApiException {
+        Club club = this.clubRepository.findByClubId(clubId).get();
+        ClubDetailsDTO clubDetails =  modelMapper.map(club, ClubDetailsDTO.class);
+        List<ClubMemberDTO> clubMemberDTOS = this.getClubMembers(clubId);
+        clubDetails.setMembers(clubMemberDTOS);
+        clubDetails.setMembersCount(club.getClubMembers().size());
+        List<EventResponseDTO> events = this.eventService.getAllClubsEvents(clubId);
+        clubDetails.setEventsCount(events.size());
+        clubDetails.setEventsDTO(events);
+        return clubDetails;
+    }
+
+    public List<ClubMemberDTO> getClubMembers(int clubId) throws ApiException {
+        Optional<List<ClubMember>> clubMembers = this.clubMemberRepository.findByClubClubId(clubId);
+        if(!clubMembers.isPresent()|| clubMembers.get().isEmpty()){
+            throw new ApiException("No clubMembers Found",404);
+        }
+
+        return  clubMembers.get().stream().map(clubMember -> {
+           ClubMemberDTO clubMemberDTO =  this.modelMapper.map(clubMember, ClubMemberDTO.class);
+           clubMemberDTO.setEmail(clubMember.getUser().getEmail());
+//           clubMemberDTO.setName(clubMember.getUser().getName());
+            return clubMemberDTO;
+        }).toList();
+    }
 }
+
+

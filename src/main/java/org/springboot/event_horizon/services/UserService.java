@@ -1,6 +1,8 @@
 package org.springboot.event_horizon.services;
 
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springboot.event_horizon.dtos.AuthDTO;
 import org.springboot.event_horizon.entities.Role;
 import org.springboot.event_horizon.entities.RoleName;
 import org.springboot.event_horizon.entities.User;
@@ -52,6 +54,8 @@ public class UserService {
   private final EmailService emailService;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+    @Autowired
+    private ModelMapper modelMapper;
 
     public Optional<User> getUserByEmail(String email) {
             return myUserDetailsRepository.findByEmail(email);
@@ -145,4 +149,14 @@ public class UserService {
         }
         throw new ApiException("No authenticated user found", HttpStatus.UNAUTHORIZED.value());
     }
+
+    public AuthDTO isAutenticated() throws ApiException {
+        User user = getLoggedInUser();
+        if (user == null) {
+            throw new ApiException("User not authenticated", HttpStatus.UNAUTHORIZED.value());
+        }
+        return modelMapper.map(user, AuthDTO.class);
+    }
 }
+
+

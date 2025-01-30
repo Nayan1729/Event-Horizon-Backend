@@ -67,10 +67,26 @@ public class ClubController{
         }
     }
 
-    @PreAuthorize("hasRole('CLUB_ADMIN')")
+
+
     @GetMapping("/{clubId}/events")
-    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId) throws ApiException {
-        Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
-        return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
+    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId)  {
+        try{
+            Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
+            return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
     }
+
+    @GetMapping("/{clubId}")
+    public ResponseEntity<ApiResponse> getClubDetails(@PathVariable int clubId)  {
+        try{
+            ClubDetailsDTO clubDetailsDTO = this.clubService.getClubDetails(clubId);
+            return ResponseEntity.status(200).body(new ApiResponse(200,clubDetailsDTO,"Club Details fetched Successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
 }

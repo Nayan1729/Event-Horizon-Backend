@@ -21,8 +21,9 @@ public class User {
 
     @Column(unique = true, nullable = false,name = "user_email")
     @Email(message = "Enter a valid email")
-
     private String email;
+
+    private String name;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @NotNull(message = "Password can't be null")

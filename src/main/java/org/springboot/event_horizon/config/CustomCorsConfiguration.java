@@ -15,6 +15,7 @@ public class CustomCorsConfiguration implements CorsConfigurationSource {
         config.setAllowedOrigins(List.of("http://localhost:5173"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
         config.setAllowedHeaders(List.of("*"));
+        config.addExposedHeader("Authorization"); // Allow the frontend to access the Authorization header
         config.setAllowCredentials(true);
         return config;
     }

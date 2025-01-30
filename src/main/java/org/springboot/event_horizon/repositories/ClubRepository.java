@@ -1,5 +1,6 @@
 package org.springboot.event_horizon.repositories;
 
+import jakarta.validation.constraints.Email;
 import org.springboot.event_horizon.entities.Club;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,6 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
     public Optional<Club> findByClubId(int id);
 
     Optional<List<Club>> findByStatus(String status);
+
+    Club findByEmail(@Email String email);
 }

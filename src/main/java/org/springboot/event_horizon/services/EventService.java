@@ -5,9 +5,12 @@ import org.modelmapper.ModelMapper;
 import org.springboot.event_horizon.dtos.EventResponseDTO;
 import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
+import org.springboot.event_horizon.entities.User;
 import org.springboot.event_horizon.repositories.ClubRepository;
 import org.springboot.event_horizon.repositories.EventRepository;
 import org.springboot.event_horizon.utilities.ApiException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +24,9 @@ public class EventService {
     private final ClubRepository clubRepository;
     private final EventRepository eventRepository;
     private final ModelMapper modelMapper;
+    @Autowired @Lazy
+    private  RegisterForEventService registerForEventService;
+    private final UserService userService;
 
     public Event registerEvent(int clubId,Event event) throws ApiException {
 
@@ -28,6 +34,7 @@ public class EventService {
             if(!clubPresent.isPresent()){
                 throw new ApiException("No club with the given id found" , 404);
             }
+            event.setTotalAttendance(0);
             event.setClub(clubPresent.get());
         return this.eventRepository.save(event);
     }
@@ -54,7 +61,6 @@ public class EventService {
         return eventResponseDTO;
     }
     public List<EventResponseDTO> getAllClubsEvents(int clubId) throws ApiException {
-
         Club club = this.clubRepository.findByClubId(clubId)
                 .orElseThrow(() -> new ApiException("No club with the given id found" , 404));
 
@@ -70,17 +76,20 @@ public class EventService {
                     }).collect(Collectors.toList());
 
 
+
+
     }
-    public List<EventResponseDTO> getAllUpcomingEvents() throws ApiException {
-        List  <Event> upcomingEvents =  this.eventRepository.findByStatus("UPCOMING")
-                .orElseThrow(()-> new ApiException("No upcoming events found" , 404));
+    public List<EventResponseDTO> getAllEvents() throws ApiException {
+        List <Event> upcomingEvents =  this.eventRepository.findAll();
+        User user = this.userService.getLoggedInUser();
         return upcomingEvents
                 .stream()
                 .map(event -> {
                     EventResponseDTO e = modelMapper.map(event, EventResponseDTO.class);
                     e.setClubId(event.getClub().getClubId());
                     e.setClubName(event.getClub().getName());
-                    System.out.println(e.getClubName());
+                    e.setRegistered(registerForEventService.isUserRegisteredForEvent(user,event.getId()));
+                    System.out.println(e.isRegistered());
                     return e;
                 }).collect(Collectors.toList());
     }

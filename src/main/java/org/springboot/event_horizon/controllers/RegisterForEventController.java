@@ -14,17 +14,24 @@
 
     @RestController
     @RequiredArgsConstructor
-    @RequestMapping("/events/registrations")
+    @RequestMapping("/api/v1/events/registrations")
     public class RegisterForEventController {
 
         private final RegisterForEventService registerForEventService;
 
+
+        @GetMapping("/{clubId}")
+        public ResponseEntity<List<RegisterForEventDTO>> getEventRegistrations(@PathVariable Integer clubId) {
+            return null;
+        }
+
+        // Add the email service
         @PostMapping("/{eventId}")
-    //    Add the email service to the event
-        public ResponseEntity<ApiResponse> registerForEvent(@PathVariable int eventId,@RequestBody RegisterForEvent registerForEvent) {
+        public ResponseEntity<ApiResponse> registerForEvent(@PathVariable("eventId") Integer eventId ,@RequestBody RegisterForEvent registerForEvent) {
             try {
+                System.out.println(eventId);
                 this.registerForEventService.registerForEvent(eventId, registerForEvent);
-                return ResponseEntity.status(201).body(new ApiResponse(201,null,"Registration Successful... Wait for the confirmation"));
+                return ResponseEntity.status(201).body(new ApiResponse(201,null,"Registration Successfull... Wait for the confirmation"));
             } catch (ApiException e) {
                 return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
             }

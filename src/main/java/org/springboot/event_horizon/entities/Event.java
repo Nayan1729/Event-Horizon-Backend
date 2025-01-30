@@ -18,7 +18,6 @@
     @Table(name = "events")
     public class Event {
         @Id
-
         @Column(name = "id")@GeneratedValue(strategy = GenerationType.IDENTITY)
         private int id;
 
@@ -34,6 +33,9 @@
         @Column(name = "event_location", nullable = false)
         private String location;
 
+        @Column(name = "image_url" , nullable = false)
+        private String imageUrl;
+
         @NotNull(message = "Event date is required.")
         @Column(name = "event_date", nullable = false)
         private LocalDate date;
@@ -48,6 +50,15 @@
 
         @Column(name = "event_status" , nullable = false)
         private String status = "UPCOMING";
+
+        @Column(name = "completed_Registrations")
+        private int completedRegistrations;
+
+        @Column(name = "total_Allowed_Registrations")
+        private int totalRegistrations;
+
+        @Column(name = "total_attendance")
+        private int totalAttendance;
 
 
         @JsonIgnoreProperties("events") // Amazing so no need of jsonManaged or backReference
