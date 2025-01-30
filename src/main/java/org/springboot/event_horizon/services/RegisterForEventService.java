@@ -11,6 +11,7 @@ import org.springboot.event_horizon.repositories.EventRepository;
 import org.springboot.event_horizon.utilities.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,10 +47,12 @@ public class RegisterForEventService {
         this.registerForEventRepository.save(registerForEvent);
     }
 
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
 public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int eventId) throws ApiException {
+
     Event e = this.eventRepository.findById(eventId)
             .orElseThrow(()->new ApiException("No such event found" , 404));
-    List<RegisterForEvent> registrationForEvent = this.registerForEventRepository.findByStatus(status)
+    List<RegisterForEvent> registrationForEvent = (List<RegisterForEvent>) this.registerForEventRepository.findByStatusAndEventId(status ,eventId )
             .orElseThrow(()->new ApiException("No "+status+ "  registrations found" , 404));
     if(registrationForEvent.isEmpty()){
         throw new ApiException("No "+status+ " registrarions found" , 404);
@@ -65,6 +68,27 @@ public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int e
                     return register;
                 }).collect(Collectors.toList());
         }
+
+//    public List<RegisterForEventDTO> getAllEventRegistrationsOfClub(String status) throws ApiException {
+//
+//
+//        List<RegisterForEvent> registrationForEvent = (List<RegisterForEvent>) this.registerForEventRepository.findByStatusAndEventId("PENDING" ,eventId )
+//                .orElseThrow(()->new ApiException("No "+status+ "  registrations found" , 404));
+//        if(registrationForEvent.isEmpty()){
+//            throw new ApiException("No "+status+ " registrarions found" , 404);
+//        }
+//        return registrationForEvent
+//                .stream()
+//                .map(registration->{
+//                    RegisterForEventDTO register =  modelMapper.map(registration, RegisterForEventDTO.class);
+//                    register.setEventTitle(registration.getEvent().getTitle());
+//                    System.out.println(register.getEventTitle());
+//                    register.setUserEmail(registration.getUser().getEmail());
+//                    System.out.println(register);
+//                    return register;
+//                }).collect(Collectors.toList());
+//    }
+
 
     public void approveRegistration(int registerId) throws ApiException {
         RegisterForEvent register =  this.registerForEventRepository.findById(registerId)
@@ -87,4 +111,6 @@ public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int e
     public boolean isUserRegisteredForEvent(User loggedInUser,int eventId){
         return this.registerForEventRepository.existsByUserIdAndEventId(loggedInUser.getId() , eventId);
     }
+
+
 }
