@@ -61,6 +61,7 @@
         private int totalAttendance;
 
 
+
         @JsonIgnoreProperties("events") // Amazing so no need of jsonManaged or backReference
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "club_id")

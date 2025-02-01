@@ -14,4 +14,5 @@ public class RegisterClubRequest {
     private String description;
     @NotNull
     private String icon;
+    
 }

@@ -47,20 +47,19 @@ public class RegisterForEventService {
         this.registerForEventRepository.save(registerForEvent);
     }
 
-    @PreAuthorize("hasRole('CLUB_ADMIN')")
 public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int eventId) throws ApiException {
 
     Event e = this.eventRepository.findById(eventId)
             .orElseThrow(()->new ApiException("No such event found" , 404));
-    List<RegisterForEvent> registrationForEvent = (List<RegisterForEvent>) this.registerForEventRepository.findByStatusAndEventId(status ,eventId )
-            .orElseThrow(()->new ApiException("No "+status+ "  registrations found" , 404));
-    if(registrationForEvent.isEmpty()){
-        throw new ApiException("No "+status+ " registrarions found" , 404);
-    }
+    List<RegisterForEvent> registrationForEvent = this.registerForEventRepository.findByStatusAndEventId(status ,eventId ).get();
+
+    System.out.println(registrationForEvent);
+
         return registrationForEvent
                 .stream()
                 .map(registration->{
                     RegisterForEventDTO register =  modelMapper.map(registration, RegisterForEventDTO.class);
+                    register.setId(registration.getId());
                     register.setEventTitle(registration.getEvent().getTitle());
                     System.out.println(register.getEventTitle());
                     register.setUserEmail(registration.getUser().getEmail());
@@ -69,34 +68,16 @@ public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int e
                 }).collect(Collectors.toList());
         }
 
-//    public List<RegisterForEventDTO> getAllEventRegistrationsOfClub(String status) throws ApiException {
-//
-//
-//        List<RegisterForEvent> registrationForEvent = (List<RegisterForEvent>) this.registerForEventRepository.findByStatusAndEventId("PENDING" ,eventId )
-//                .orElseThrow(()->new ApiException("No "+status+ "  registrations found" , 404));
-//        if(registrationForEvent.isEmpty()){
-//            throw new ApiException("No "+status+ " registrarions found" , 404);
-//        }
-//        return registrationForEvent
-//                .stream()
-//                .map(registration->{
-//                    RegisterForEventDTO register =  modelMapper.map(registration, RegisterForEventDTO.class);
-//                    register.setEventTitle(registration.getEvent().getTitle());
-//                    System.out.println(register.getEventTitle());
-//                    register.setUserEmail(registration.getUser().getEmail());
-//                    System.out.println(register);
-//                    return register;
-//                }).collect(Collectors.toList());
-//    }
-
-
     public void approveRegistration(int registerId) throws ApiException {
         RegisterForEvent register =  this.registerForEventRepository.findById(registerId)
                 .orElseThrow(()->new ApiException("No such event found" , 404));
-        if (register.getStatus().equals("APPROVED")) {
+        if (register.getStatus().equals("APPROVED")){
             throw new ApiException("Registration already processed", 400);
         }
+        System.out.println(register.getEvent().getCompletedRegistrations());
         register.setStatus("APPROVED");
+        register.getEvent().setCompletedRegistrations(register.getEvent().getCompletedRegistrations() + 1);
+        System.out.println(register.getEvent().getCompletedRegistrations());
         this.registerForEventRepository.save(register);
     }
     public void rejectRegistration(int registerId) throws ApiException {
@@ -109,8 +90,6 @@ public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int e
         this.registerForEventRepository.save(register);
     }
     public boolean isUserRegisteredForEvent(User loggedInUser,int eventId){
-        return this.registerForEventRepository.existsByUserIdAndEventId(loggedInUser.getId() , eventId);
+        return this.registerForEventRepository.existsByUserIdAndEventIdAndStatus(loggedInUser.getId() , eventId , "ACCEPTED");
     }
-
-
 }

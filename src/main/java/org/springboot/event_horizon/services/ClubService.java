@@ -3,10 +3,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springboot.event_horizon.dtos.*;
 import org.springboot.event_horizon.entities.*;
-import org.springboot.event_horizon.repositories.ClubMemberRepository;
-import org.springboot.event_horizon.repositories.ClubRepository;
-import org.springboot.event_horizon.repositories.MyUserDetailsRepository;
-import org.springboot.event_horizon.repositories.RoleRepository;
+import org.springboot.event_horizon.repositories.*;
 import org.springboot.event_horizon.utilities.ApiException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -28,6 +25,8 @@ public class ClubService{
     private final MyUserDetailsRepository myUserDetailsRepository;
     private final MyUserDetailsRepository userRepository;
     private final ClubMemberRepository clubMemberRepository;
+    private final EventRepository eventRepository;
+    private final RegisterForEventService registerForEventService;
     @Autowired  @Lazy
     private EventService eventService;
 
@@ -198,6 +197,24 @@ public class ClubService{
            clubMemberDTO.setEmail(clubMember.getUser().getEmail());
 //           clubMemberDTO.setName(clubMember.getUser().getName());
             return clubMemberDTO;
+        }).toList();
+    }
+
+
+    public List<RegistrationDTO> getAllPendingEventRegistrationsOfClub(String email) throws ApiException {
+        int clubId = this.getClubIdByEmail(email);
+        List<Event> events = this.eventRepository.findAllByClubId(clubId)
+                .orElseThrow(()->new ApiException("No events found ",404));
+       List<Event> filteredEvents =  events.stream().filter(e->!e.getStatus().equals("PAST")).toList();
+        System.out.println(filteredEvents);
+       return filteredEvents.stream().map(e->{
+           RegistrationDTO registrationDTO = modelMapper.map(e, RegistrationDTO.class);
+            try {
+                registrationDTO.setPendingRegistrations(registerForEventService.getAllRegistrationsByStatus("PENDING" ,e.getId() ));
+            } catch (ApiException ex) {
+                throw new RuntimeException(ex);
+            }
+            return registrationDTO;
         }).toList();
     }
 }

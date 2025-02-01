@@ -71,7 +71,7 @@
         }
 
         @PreAuthorize("hasRole('CLUB_ADMIN')")
-        @PostMapping("/{registerId}/approve")
+        @GetMapping("/{registerId}/approve")
         public ResponseEntity<ApiResponse> approveRegistration(@PathVariable int registerId){
             try{
                 this.registerForEventService.approveRegistration(registerId);
@@ -81,11 +81,11 @@
             }
         }
         @PreAuthorize("hasRole('CLUB_ADMIN')")
-        @PostMapping("/{registerId}/reject")
+        @GetMapping("/{registerId}/reject")
         public ResponseEntity<ApiResponse> rejectRegistration(@PathVariable int registerId){
             try{
                 this.registerForEventService.rejectRegistration(registerId);
-                return ResponseEntity.status(200).body(new ApiResponse(200,null,"Registration Successfully rejected..."));
+                return ResponseEntity.status(200).body(new ApiResponse(200,null,"Registration declined Successfully..."));
             }catch (ApiException e){
                 return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
             }

@@ -2,6 +2,7 @@ package org.springboot.event_horizon.repositories;
 
 import jakarta.validation.constraints.Email;
 import org.springboot.event_horizon.entities.Club;
+import org.springboot.event_horizon.entities.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springboot.event_horizon.dtos.*;
 import org.springboot.event_horizon.entities.Club;
+import org.springboot.event_horizon.entities.User;
 import org.springboot.event_horizon.entities.UserPrincipal;
 import org.springboot.event_horizon.services.ClubService;
 import org.springboot.event_horizon.services.EventService;
+import org.springboot.event_horizon.services.UserService;
 import org.springboot.event_horizon.utilities.ApiException;
 import org.springboot.event_horizon.utilities.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ public class ClubController{
 
     private  final ClubService clubService;
     private final EventService eventService;
+    private final UserService userService;
 
     @GetMapping
     public ResponseEntity<ApiResponse> getAllClubs(){
@@ -37,7 +40,6 @@ public class ClubController{
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> registerClubRequest(@RequestBody @Valid RegisterClubRequest request ) {
-
         try {
             UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String email = principal.getUsername();
@@ -70,7 +72,7 @@ public class ClubController{
 
 
     @GetMapping("/{clubId}/events")
-    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId)  {
+    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId){
         try{
             Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
             return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
@@ -80,7 +82,7 @@ public class ClubController{
     }
 
     @GetMapping("/{clubId}")
-    public ResponseEntity<ApiResponse> getClubDetails(@PathVariable int clubId)  {
+    public ResponseEntity<ApiResponse> getClubDetails(@PathVariable int clubId) {
         try{
             ClubDetailsDTO clubDetailsDTO = this.clubService.getClubDetails(clubId);
             return ResponseEntity.status(200).body(new ApiResponse(200,clubDetailsDTO,"Club Details fetched Successfully"));
@@ -88,5 +90,16 @@ public class ClubController{
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
     }
-
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @GetMapping("/pending-registrations")
+    public ResponseEntity<ApiResponse> getPendingEventRegistration()  {
+        try {
+            User currentUser = userService.getLoggedInUser();
+            List<RegistrationDTO> pendingRegistrations = this.clubService.getAllPendingEventRegistrationsOfClub(currentUser.getEmail());
+            System.out.println(pendingRegistrations);
+            return ResponseEntity.status(200).body(new ApiResponse(200,pendingRegistrations,"Pending Registrations of all events  fetched Successfully"));
+        } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
 }

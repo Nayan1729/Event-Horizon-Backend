@@ -25,4 +25,5 @@ public class EventResponseDTO {
     private int totalRegistrations;
     private int completedRegistrations;
     private boolean isRegistered;
+    private int totalAttendance;
 }
