@@ -177,8 +177,12 @@ public class ClubService{
     public ClubDetailsDTO getClubDetails(int clubId) throws ApiException {
         Club club = this.clubRepository.findByClubId(clubId).get();
         ClubDetailsDTO clubDetails =  modelMapper.map(club, ClubDetailsDTO.class);
+        System.out.println(clubDetails);
         List<ClubMemberDTO> clubMemberDTOS = this.getClubMembers(clubId);
+        System.out.println("clubMemberDTOS: " + clubMemberDTOS);
+        System.out.println(clubMemberDTOS);
         clubDetails.setMembers(clubMemberDTOS);
+        System.out.println(clubDetails);
         clubDetails.setMembersCount(club.getClubMembers().size());
         List<EventResponseDTO> events = this.eventService.getAllClubsEvents(clubId);
         clubDetails.setEventsCount(events.size());
@@ -188,16 +192,27 @@ public class ClubService{
 
     public List<ClubMemberDTO> getClubMembers(int clubId) throws ApiException {
         Optional<List<ClubMember>> clubMembers = this.clubMemberRepository.findByClubClubId(clubId);
-        if(!clubMembers.isPresent()|| clubMembers.get().isEmpty()){
-            throw new ApiException("No clubMembers Found",404);
-        }
-
+         
         return  clubMembers.get().stream().map(clubMember -> {
            ClubMemberDTO clubMemberDTO =  this.modelMapper.map(clubMember, ClubMemberDTO.class);
            clubMemberDTO.setEmail(clubMember.getUser().getEmail());
 //           clubMemberDTO.setName(clubMember.getUser().getName());
             return clubMemberDTO;
         }).toList();
+    }
+
+    public List<ClubRequestDTO> getAllClubRequests() throws ApiException {
+       Optional<List<Club>> clubRequests =  this.clubRepository.findByStatus("PENDING");
+       if(!clubRequests.isPresent()){
+           throw new ApiException("No pending club requests found",404);
+       }
+
+       List<Club> clubs = clubRequests.get();
+       if(clubs.isEmpty()){
+           throw new ApiException("No clubs found",404);
+       }
+        System.out.println("clubRequests: " + clubs);
+      return clubs.stream().map(club -> modelMapper.map(club, ClubRequestDTO.class)).collect(Collectors.toList());
     }
 
 

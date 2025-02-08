@@ -84,7 +84,9 @@ public class ClubController{
     @GetMapping("/{clubId}")
     public ResponseEntity<ApiResponse> getClubDetails(@PathVariable int clubId) {
         try{
+            System.out.println(clubId);
             ClubDetailsDTO clubDetailsDTO = this.clubService.getClubDetails(clubId);
+            System.out.println(clubDetailsDTO);
             return ResponseEntity.status(200).body(new ApiResponse(200,clubDetailsDTO,"Club Details fetched Successfully"));
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));

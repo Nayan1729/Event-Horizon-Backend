@@ -31,5 +31,3 @@ public class Poll {
     @JsonIgnoreProperties("poll")
     private Set<Vote> votes = new HashSet<>();
 }
-
-

@@ -6,9 +6,13 @@
     import lombok.Getter;
     import lombok.Setter;
     import lombok.ToString;
+    import org.hibernate.annotations.Cascade;
+    import org.springframework.format.annotation.DateTimeFormat;
 
     import java.time.LocalDate;
     import java.time.LocalTime;
+    import java.util.LinkedList;
+    import java.util.List;
     import java.util.Set;
 
     @Getter
@@ -60,8 +64,6 @@
         @Column(name = "total_attendance")
         private int totalAttendance;
 
-
-
         @JsonIgnoreProperties("events") // Amazing so no need of jsonManaged or backReference
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "club_id")
@@ -70,4 +72,8 @@
         @OneToMany( cascade = CascadeType.ALL,mappedBy ="event")
         @JsonIgnoreProperties("event")
         private Set<RegisterForEvent> registerForEvents;
+
+        @OneToMany(cascade = CascadeType.ALL , fetch = FetchType.LAZY)
+        private List<Speaker> speakers;
+
     }

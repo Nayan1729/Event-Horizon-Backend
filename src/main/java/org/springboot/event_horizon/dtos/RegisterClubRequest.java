@@ -12,7 +12,6 @@ public class RegisterClubRequest {
     private String name;
     @NotNull
     private String description;
-    @NotNull
-    private String icon;
-    
+
+    // Add the icon
 }

@@ -1,7 +1,6 @@
 package org.springboot.event_horizon.dtos;
 
 import lombok.Data;
-import org.springboot.event_horizon.entities.ClubMember;
 
 import java.util.List;
 

@@ -3,6 +3,7 @@ package org.springboot.event_horizon.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springboot.event_horizon.dtos.EventResponseDTO;
+import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
 import org.springboot.event_horizon.entities.User;
 import org.springboot.event_horizon.services.ClubService;
@@ -31,20 +32,20 @@ public class EventController {
     @GetMapping
     public ResponseEntity<ApiResponse> getAllEvents() {
         try {
-            List<EventResponseDTO> upcomingEvents =  this.eventService.getAllEvents();
-            System.out.println(upcomingEvents);
-            if(upcomingEvents.isEmpty()){
-                throw new ApiException("All events fetched successfully" , 404);
+            List<EventResponseDTO> allEvents =  this.eventService.getAllEvents();
+            System.out.println(allEvents);
+            if(allEvents.isEmpty()){
+                throw new ApiException("No events found" , 404);
             }
-            return ResponseEntity.status(200).body(new ApiResponse(200,upcomingEvents,"Upcoming events fetched successfully"));
+            return ResponseEntity.status(200).body(new ApiResponse(200,allEvents,"All events fetched successfully"));
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
     }
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
-    @PostMapping("")
-    public ResponseEntity<ApiResponse> createEvent(@RequestBody @Valid Event event) {
+    @PostMapping
+    public ResponseEntity<ApiResponse> createEvent(@RequestBody @Valid Event event){
         try{
             User currentUser = userService.getLoggedInUser();
             int clubId = clubService.getClubIdByEmail(currentUser.getEmail());
@@ -57,12 +58,10 @@ public class EventController {
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @DeleteMapping("/{eventId}")
-    public ResponseEntity<ApiResponse> deleteEvent( @PathVariable int eventId) {
+    public ResponseEntity<ApiResponse> deleteEvent( @PathVariable int eventId){
         try{
-            User currentUser = userService.getLoggedInUser();
-            int clubId = clubService.getClubIdByEmail(currentUser.getEmail());
-            this.eventService.deleteEvent(clubId,eventId);
-            return ResponseEntity.status(200).body(new ApiResponse(204,clubId,"Event deleted successfully"));
+            this.eventService.deleteEvent(eventId);
+            return ResponseEntity.status(200).body(new ApiResponse(204,null,"Event  deleted successfully"));
         }catch (ApiException e ){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
@@ -70,6 +69,7 @@ public class EventController {
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse> getEvent(@PathVariable int eventId){
         try{
+            System.out.println("Hello");
             EventResponseDTO event  = this.eventService.getEvent(eventId);
             System.out.println(event);
 
@@ -85,6 +85,16 @@ public class EventController {
         try {
             this.eventService.changeEventStatus(eventId,eventStatus);
             return ResponseEntity.status(200).body(new ApiResponse(200,eventId,"Event status changed successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+    @PreAuthorize(("hasRole('CLUB_ADMIN')"))
+    @PatchMapping
+    public ResponseEntity<ApiResponse> updateEvent(@RequestBody @Valid Event event){
+        try{
+            int id = this.eventService.updateEvent(event);
+            return ResponseEntity.status(200).body(new ApiResponse(200,id,"Event updated successfully..."));
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }

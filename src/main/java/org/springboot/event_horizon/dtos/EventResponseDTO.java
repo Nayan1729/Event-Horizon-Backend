@@ -3,9 +3,11 @@ package org.springboot.event_horizon.dtos;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springboot.event_horizon.entities.Speaker;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,4 +28,5 @@ public class EventResponseDTO {
     private int completedRegistrations;
     private boolean isRegistered;
     private int totalAttendance;
+    private List<Speaker> speakers;
 }
