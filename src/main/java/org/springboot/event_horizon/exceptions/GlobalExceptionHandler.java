@@ -29,8 +29,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     @ResponseBody
     public ResponseEntity<ApiResponse> handleBadCredentialsException(BadCredentialsException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponse(HttpStatus.UNAUTHORIZED.value(), null, "Invalid email or password"));
+        return ResponseEntity.status(400)
+                .body(new ApiResponse(400, null, "Invalid email or password"));
     }
 
     @ExceptionHandler(ApiException.class)

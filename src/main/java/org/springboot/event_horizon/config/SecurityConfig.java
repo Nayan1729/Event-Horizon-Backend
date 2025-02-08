@@ -1,5 +1,6 @@
 package org.springboot.event_horizon.config;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springboot.event_horizon.filters.JwtFilter;
 import org.springboot.event_horizon.services.MyUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig  {
 
     @Autowired
@@ -34,7 +36,8 @@ public class SecurityConfig  {
     @Autowired
     @Lazy
     private JwtFilter jwtFilter;
-
+    private final CustomAutenticationEntryPoint customAutenticationEntryPoint;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
     @Bean
             public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomCorsConfiguration customCorsConfiguration) throws Exception {
                 return http
@@ -48,6 +51,12 @@ public class SecurityConfig  {
                                         .anyRequest().authenticated()
                         )
                         .cors(c->c.configurationSource(customCorsConfiguration))
+
+                        .exceptionHandling(ex-> ex
+                                        .authenticationEntryPoint( customAutenticationEntryPoint)
+                                        .accessDeniedHandler(customAccessDeniedHandler)
+                        )
+
                         .sessionManagement(session->
                                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -6,6 +6,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springboot.event_horizon.services.JWTService;
 import org.springboot.event_horizon.services.MyUserDetailsService;
+import org.springboot.event_horizon.utilities.ApiException;
+import org.springboot.event_horizon.utilities.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -42,11 +45,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     ApplicationContext context;
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getServletPath();
-        return path.equals("/api/v1/login") || path.equals("/api/v1/register") || path.equals("/api/v1/verify");
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -71,6 +69,14 @@ public class JwtFilter extends OncePerRequestFilter {
                 Claims claims = jwtService.extractAllClaims(token);
                 System.out.println("doFilterInternal email!=null");
                 List<String> roles = (List<String>) claims.get("roles");
+                Collection<? extends  GrantedAuthority> grantedAuthorities =  userDetails.getAuthorities();
+                if(grantedAuthorities.contains(new SimpleGrantedAuthority("ROLE_CLUB_ADMIN")) && !roles.contains("CLUB_ADMIN")){
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+                    response.getWriter().write("{\"status\": 400, \"message\": \"Your role has been upgraded.Please log in again.\"}");
+                    return; // Stop further processing
+                }
                 System.out.println("roles: " + roles);
                 List<GrantedAuthority> authorities = roles.stream()
                         .map(role->new SimpleGrantedAuthority("ROLE_"+role))

@@ -38,4 +38,13 @@ public class ApiResponse {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    @Override
+    public String toString() {
+        return "ApiResponse{" +
+                "statusCode=" + statusCode +
+                ", data=" + data +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }
