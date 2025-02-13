@@ -12,6 +12,6 @@ public class AddMembersRequestDTO{
     @Email(message = "Enter a valid email address")
     private String email;
 
-    @NotNull
+    @NotNull(message = "Designation is required")
     private String designation;
 }

@@ -3,6 +3,7 @@ package org.springboot.event_horizon.services;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springboot.event_horizon.dtos.EventRegistrationDTO;
 import org.springboot.event_horizon.dtos.EventResponseDTO;
 import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
@@ -32,8 +33,9 @@ public class EventService {
     private final UserService userService;
     @Autowired @Lazy
     private  ClubService clubService;
+    private final AwsService awsService;
 
-    public Event registerEvent(int clubId,Event event) throws ApiException {
+    public Event registerEvent(int clubId, EventRegistrationDTO event) throws ApiException {
 
             Optional<Club> clubPresent = this.clubRepository.findByClubId(clubId);
             if(!clubPresent.isPresent()){
@@ -43,14 +45,18 @@ public class EventService {
             if(presentEvent.isPresent()){
                 throw new ApiException("Event with title " + event.getTitle() + " already exists" , 404);
             }
-            event.setTotalAttendance(0);
-            event.setClub(clubPresent.get());
-        return this.eventRepository.save(event);
+            Event e = modelMapper.map(event , Event.class);
+            e.setImageUrl(awsService.saveImageToS3(event.getImage()));
+            e.setTotalAttendance(0);
+            e.setClub(clubPresent.get());
+        Event registeredEvent =  this.eventRepository.save(e);
+        registeredEvent.setImageUrl(awsService.getImageUrl(e.getImageUrl()));
+        return registeredEvent;
     }
 
     public void deleteEvent( int eventId) throws ApiException {
         User currentUser = userService.getLoggedInUser();
-        int clubId = clubService.getClubIdByEmail(currentUser.getEmail());
+        int clubId = clubService.getClubByEmail(currentUser.getEmail()).getClubId();
         Optional<Club> clubPresent = this.clubRepository.findByClubId(clubId);
 
         if(!clubPresent.isPresent()){
@@ -74,11 +80,11 @@ public class EventService {
 
         Event eventPresent = this.eventRepository.findById(eventId)
                 .orElseThrow(() -> new ApiException("No event with the given id found" , 404));
-        System.out.println(eventPresent.getSpeakers());
         EventResponseDTO eventResponseDTO = this.modelMapper.map(eventPresent, EventResponseDTO.class);
-        System.out.println(eventResponseDTO.getSpeakers());
         eventResponseDTO.setId(eventPresent.getClub().getClubId());
         eventResponseDTO.setClubName(eventPresent.getClub().getName());
+        String imageUrl = awsService.getImageUrl(eventPresent.getImageUrl());
+        eventResponseDTO.setImageUrl(imageUrl);
         return eventResponseDTO;
     }
     public List<EventResponseDTO> getAllClubsEvents(int clubId) throws ApiException {
@@ -93,6 +99,7 @@ public class EventService {
                         EventResponseDTO e = modelMapper.map(event, EventResponseDTO.class);
                         e.setClubId(event.getClub().getClubId());
                         e.setClubName(event.getClub().getName());
+                        e.setImageUrl(awsService.getImageUrl(event.getImageUrl()));
                         return e;
                     }).collect(Collectors.toList());
     }
@@ -106,6 +113,7 @@ public class EventService {
                     e.setClubId(event.getClub().getClubId());
                     e.setClubName(event.getClub().getName());
                     e.setRegistered(registerForEventService.isUserRegisteredForEvent(user,event.getId()));
+                    e.setImageUrl(awsService.getImageUrl(event.getImageUrl()));
                     System.out.println(e.isRegistered());
                     return e;
                 }).collect(Collectors.toList());
@@ -121,24 +129,21 @@ public class EventService {
         this.eventRepository.save(e);
     }
 
-    public int updateEvent( Event event) throws ApiException {
+    public int updateEvent( EventRegistrationDTO event) throws ApiException {
+        System.out.println("updateEvent:"+event.getId());
         User currentUser = userService.getLoggedInUser();
-        int clubId = clubService.getClubIdByEmail(currentUser.getEmail());
-        System.out.println(clubId);
+        int clubId = clubService.getClubByEmail(currentUser.getEmail()).getClubId();
         Optional<Club> clubPresent = this.clubRepository.findByClubId(clubId);
         Club club = clubPresent.get();
-        System.out.println(club.getClubId());
         Optional<Event> dbEvent = this.eventRepository.findById(event.getId());
         if(!dbEvent.isPresent()){
             throw new ApiException("No event with the given id found" , 404);
         }
         Event presentEvent = dbEvent.get();
-        System.out.println(presentEvent.getClub().getClubId());
-        event.setClub(clubPresent.get());
         if(presentEvent.getClub().getClubId() != clubId){
             throw new ApiException("U are not allowed to update this event", 401);
         }
-        System.out.println("Update event");
+
         if(presentEvent.getCompletedRegistrations()>event.getTotalRegistrations()) {
             throw new ApiException("Invalid value of eventRegistrations", 404);
         }
@@ -149,8 +154,13 @@ public class EventService {
         presentEvent.setStartTime(event.getStartTime());
         presentEvent.setEndTime(event.getEndTime());
         presentEvent.setStatus(event.getStatus());
+        //file add
+        if(event.getImage()!=null){
+            String imageUrl = awsService.saveImageToS3(event.getImage());
+            presentEvent.setImageUrl(imageUrl);
+        }
         presentEvent.setTotalRegistrations(event.getTotalRegistrations());
         presentEvent.setSpeakers(event.getSpeakers());
-         return this.eventRepository.save(event).getId();
+         return this.eventRepository.save(presentEvent).getId();
     }
 }

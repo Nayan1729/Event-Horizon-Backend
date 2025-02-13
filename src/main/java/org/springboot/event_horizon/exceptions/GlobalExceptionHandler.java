@@ -43,6 +43,7 @@ public class GlobalExceptionHandler {
 
 
 
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
     public ResponseEntity<ApiResponse> handleException(Exception ex) {

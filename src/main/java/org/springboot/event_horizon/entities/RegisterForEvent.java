@@ -29,5 +29,6 @@ public class RegisterForEvent {
     private String status = "PENDING"; // UNAPPROVED  , APPROVED , PENDING
 
     private LocalDateTime registeredAt = LocalDateTime.now();
-}
 
+    private boolean attended = false;
+}

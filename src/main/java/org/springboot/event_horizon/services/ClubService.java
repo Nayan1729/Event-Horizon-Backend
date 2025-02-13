@@ -1,4 +1,5 @@
 package org.springboot.event_horizon.services;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springboot.event_horizon.dtos.*;
@@ -29,25 +30,32 @@ public class ClubService{
     private final RegisterForEventService registerForEventService;
     @Autowired  @Lazy
     private EventService eventService;
+    @Autowired
+    private AwsService awsService;
 
-    public Club registerClub(RegisterClubRequest request, String email) throws ApiException {
-        try{
+    @Autowired @Lazy
+    private UserService userService;
+
+
+    public Club registerClub(RegisterClubRequest request , String email) throws ApiException {
+
             if(this.clubRepository.findByName(request.getName()).isPresent()){
                 throw new ApiException("Club or club request with the same name already exists" , HttpStatus.CONFLICT.value());
             }
+        if(this.clubRepository.findByEmail(request.getName()).isPresent()){
+            throw new ApiException("Cant register yourself as another club" , HttpStatus.CONFLICT.value());
+        }
             //Source , Destination
             // Basically argument1 ==> argument2
             Club club = this.modelMapper.map(request, Club.class);
+            String image = awsService.saveImageToS3(request.getIcon());
+            System.out.println(image);
+            club.setIcon(image);
             club.setEmail(email);
             club.setStatus("PENDING");
-            this.clubRepository.save(club);
-            // Upgrade role of the user
-            return club;
-        }catch (ApiException e){
-            throw new ApiException(e.getMessage() , e.getStatusCode());
-        }catch (Exception e){
-            throw new ApiException(e.getMessage() , 500);
-        }
+            Club registeredClub = this.clubRepository.save(club);
+            registeredClub.setIcon(awsService.getImageUrl(image));
+            return registeredClub;
     }
 
     public Club approveClubRequest(int id) throws ApiException {
@@ -83,45 +91,6 @@ public class ClubService{
         Club approvedClub = this.clubRepository.save(club.get());
         return approvedClub;
     }
-    public BatchAddClubMemberRequestDTO addClubMembers(int clubId, List<AddMembersRequestDTO>membersRequest) throws ApiException {
-            Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
-
-            if(!existingClub.isPresent()){
-                throw new ApiException("No club with the given id found",404);
-            }
-            Club club = existingClub.get();
-            List<ClubMember> addedMembers = new ArrayList<>();
-            List<FailedMemberResponse> failedMemberResponses = new ArrayList<>();
-
-            for (AddMembersRequestDTO member : membersRequest){
-                Optional<User> presentUser = this.userRepository.findByEmail(member.getEmail());
-                if(club.getEmail() == member.getEmail() ){
-                    failedMemberResponses.add(new FailedMemberResponse(member.getEmail() , "Cant the club's email"));
-                    continue;
-                }
-                if(!presentUser.isPresent()){
-                    failedMemberResponses.add(new FailedMemberResponse(member.getEmail() , "User with this email doesn't exist"));
-                    continue;
-                }
-
-                    User user = presentUser.get();
-                // Check if the user is already a member of the club
-                boolean isAlreadyMember = club.getClubMembers().stream()
-                        .anyMatch(m -> m.getUser().getId() == user.getId());
-                    if(isAlreadyMember){
-                        failedMemberResponses.add(new FailedMemberResponse(member.getEmail() , "User with this email already exists"));
-                        continue;
-                    }
-                    ClubMember newMember = new ClubMember();
-                    newMember.setClub(club);
-                    newMember.setUser(user);
-                    newMember.setDesignation(member.getDesignation());
-                    club.getClubMembers().add(newMember);
-                    clubRepository.save(club);
-                    addedMembers.add(newMember);
-            }
-           return new BatchAddClubMemberRequestDTO(addedMembers,failedMemberResponses);
-    }
 
     public Set<EventSummaryDTO> getClubEvents(int clubId) throws ApiException {
         Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
@@ -141,7 +110,6 @@ public class ClubService{
                             .filter(registration -> "PENDING".equals(registration.getStatus()))
                             .count();
 
-
                         EventSummaryDTO eventSummary = modelMapper.map(event, EventSummaryDTO.class);
                         eventSummary.setPendingRegistrations(pendingCount); // Set the derived field
                         return eventSummary;
@@ -151,7 +119,30 @@ public class ClubService{
                 .filter(Objects::nonNull) // Remove null values from skipped events
                 .collect(Collectors.toSet());
     }
-
+    public ClubMemberDTO addClubMember(int clubId , AddClubMembersRequestDTO addClubMembersRequestDTO) throws ApiException {
+        User currentUser  = userService.getLoggedInUser();
+        Club club = this.clubRepository.findByClubId(clubId).get();
+        if(!club.getEmail().equals(currentUser.getEmail())){
+            throw new ApiException("Cant add members to a different club",400);
+        }
+        User user = userService.getUserByEmail(addClubMembersRequestDTO.getEmail())
+                .orElseThrow(()-> new ApiException("User with the above email doesn't exist",404));
+        if(club.getClubMembers().stream().anyMatch(member->
+            member.getUser().getEmail().equals(addClubMembersRequestDTO.getEmail()))){
+            throw new ApiException(user.getEmail()+" is already a member of the club",400);
+        }
+        ClubMember clubMember = new ClubMember();
+        clubMember.setClub(club);
+        clubMember.setUser(user);
+        clubMember.setDesignation(addClubMembersRequestDTO.getDesignation());
+        club.getClubMembers().add(clubMember);
+        this.clubMemberRepository.save(clubMember);
+        ClubMemberDTO clubMemberDTO = modelMapper.map(addClubMembersRequestDTO, ClubMemberDTO.class);
+        clubMemberDTO.setName(user.getName());
+        clubMemberDTO.setImageUrl(user.getImageUrl());
+        clubMemberDTO.setId(clubMember.getId());
+        return clubMemberDTO;
+    }
     public List<ClubDTO> getAllClubs()throws ApiException {
         List<Club> clubs = this.clubRepository.findByStatus("APPROVED")
                 .orElseThrow(()->new ApiException("No clubs found" , 404));
@@ -161,18 +152,18 @@ public class ClubService{
                    ClubDTO clubDTO = modelMapper.map(club, ClubDTO.class);
                    clubDTO.setMembersCount(club.getClubMembers().size());
                    clubDTO.setEventsCount(club.getEvents().size());
+                   clubDTO.setIcon(awsService.getImageUrl(club.getIcon()));
                    return clubDTO;
                 })
                 .collect(Collectors.toList());
     }
 
-    public int getClubIdByEmail(String email) throws ApiException {
-        if(email == null || email.isEmpty()){
+    public Club getClubByEmail(String email) throws ApiException {
+        if(email == null || email.trim().isEmpty()){
             throw new ApiException("Email cannot be empty",400);
         }
-        return clubRepository.findByEmail(email).getClubId();
+        return clubRepository.findByEmail(email).get();
     }
-
 
     public ClubDetailsDTO getClubDetails(int clubId) throws ApiException {
         Club club = this.clubRepository.findByClubId(clubId).get();
@@ -184,6 +175,7 @@ public class ClubService{
         clubDetails.setMembers(clubMemberDTOS);
         System.out.println(clubDetails);
         clubDetails.setMembersCount(club.getClubMembers().size());
+        clubDetails.setIcon(awsService.getImageUrl(club.getIcon()));
         List<EventResponseDTO> events = this.eventService.getAllClubsEvents(clubId);
         clubDetails.setEventsCount(events.size());
         clubDetails.setEventsDTO(events);
@@ -217,7 +209,7 @@ public class ClubService{
 
 
     public List<RegistrationDTO> getAllPendingEventRegistrationsOfClub(String email) throws ApiException {
-        int clubId = this.getClubIdByEmail(email);
+        int clubId = this.getClubByEmail(email).getClubId();
         List<Event> events = this.eventRepository.findAllByClubId(clubId)
                 .orElseThrow(()->new ApiException("No events found ",404));
        List<Event> filteredEvents =  events.stream().filter(e->!e.getStatus().equals("PAST")).toList();
@@ -232,6 +224,76 @@ public class ClubService{
             return registrationDTO;
         }).toList();
     }
+
+    public int updateClubDetails(int clubId, RegisterClubRequest clubRequest) throws ApiException {
+        User user = this.userService.getLoggedInUser();
+        Club club = this.clubRepository.findByClubId(clubId).get();
+        String clubEmail = club.getEmail();
+        if (!clubEmail.equals(user.getEmail())) {
+            throw new ApiException("You can't edit this club",401);
+        }
+        club.setName(clubRequest.getName());
+        club.setDescription(clubRequest.getDescription());
+        if(clubRequest.getIcon() != null){
+            club.setIcon(awsService.saveImageToS3(clubRequest.getIcon()));
+        }
+        this.clubRepository.save(club);
+        return club.getClubId();
+    } 
+    public int deleteClub(int clubId) throws ApiException {
+        Club club = this.clubRepository.findByClubId(clubId).orElseThrow(()->new ApiException("No club found with the given id",404));
+        User user = this.userService.getLoggedInUser();
+
+        if (!user.getEmail().equals(club.getEmail())) {
+            throw new ApiException("You can't delete this club",401);
+        }
+        awsService.deleteImageFromS3(club.getIcon());
+        Role clubAdminRole = roleRepository.findByName(RoleName.valueOf("CLUB_ADMIN"))
+                .orElseThrow(()->new ApiException("Can't find the role admin",404));
+        if (user.getRoles().contains(clubAdminRole)) {
+            user.getRoles().remove(clubAdminRole);
+            this.userRepository.save(user);
+        }
+        this.clubRepository.delete(club);
+        return clubId;
+    }
+
+    public void deleteClubMember(int id) throws ApiException {
+        ClubMember member = this.clubMemberRepository.findById(id)
+                .orElseThrow(()->new ApiException("No member found with the given id",404));
+        User user = this.userService.getLoggedInUser();
+        Club club = member.getClub();
+        if (!user.getEmail().equals(club.getEmail())) {
+            throw new ApiException("You can't delete this member",404);
+        }
+        club.getClubMembers().remove(member);
+        this.clubMemberRepository.delete(member);
+    }
+
+    public ClubMemberDTO editClubMember(@Valid ClubMemberDTO memberRequest) throws ApiException {
+        User currentUser = this.userService.getLoggedInUser();
+        ClubMember previousMember = this.clubMemberRepository.findById(memberRequest.getId()).get();
+        Club club = previousMember.getClub();
+        if(!currentUser.getEmail().equals(club.getEmail())){
+            throw new ApiException("You can't edit this club",404);
+        }
+        User userInEmail = this.userRepository.findByEmail(memberRequest.getEmail())
+                .orElseThrow(()->new ApiException("No user found for the given email",404));
+
+        if(club.getClubMembers().stream().anyMatch(clubMember ->
+                clubMember.getUser().getEmail().equals(userInEmail.getEmail()))){
+            throw new ApiException(userInEmail.getEmail()+" is already a member of the club",400);
+        }
+
+        previousMember.setUser(userInEmail);
+        previousMember.setDesignation(memberRequest.getDesignation());
+        ClubMember editedMember =  this.clubMemberRepository.save(previousMember);
+
+        // Already has email and designation set
+        memberRequest.setName(editedMember.getUser().getName());
+        memberRequest.setId(editedMember.getId());
+        memberRequest.setImageUrl(editedMember.getUser().getImageUrl());
+
+        return memberRequest;
+    }
 }
-
-

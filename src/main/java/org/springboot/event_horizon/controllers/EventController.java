@@ -2,6 +2,7 @@ package org.springboot.event_horizon.controllers;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springboot.event_horizon.dtos.EventRegistrationDTO;
 import org.springboot.event_horizon.dtos.EventResponseDTO;
 import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
@@ -15,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -45,10 +47,10 @@ public class EventController {
 
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @PostMapping
-    public ResponseEntity<ApiResponse> createEvent(@RequestBody @Valid Event event){
+    public ResponseEntity<ApiResponse> createEvent(@ModelAttribute @Valid EventRegistrationDTO event){
         try{
             User currentUser = userService.getLoggedInUser();
-            int clubId = clubService.getClubIdByEmail(currentUser.getEmail());
+            int clubId = clubService.getClubByEmail(currentUser.getEmail()).getClubId();
             Event registeredEvent = this.eventService.registerEvent(clubId, event);
             return ResponseEntity.status(201).body(new ApiResponse(201,registeredEvent,"Event registered successfully"));
         }catch (ApiException e){
@@ -61,7 +63,7 @@ public class EventController {
     public ResponseEntity<ApiResponse> deleteEvent( @PathVariable int eventId){
         try{
             this.eventService.deleteEvent(eventId);
-            return ResponseEntity.status(200).body(new ApiResponse(204,null,"Event  deleted successfully"));
+            return ResponseEntity.ok().body(new ApiResponse(200,null,"Event  deleted successfully"));
         }catch (ApiException e ){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
@@ -69,7 +71,6 @@ public class EventController {
     @GetMapping("/{eventId}")
     public ResponseEntity<ApiResponse> getEvent(@PathVariable int eventId){
         try{
-            System.out.println("Hello");
             EventResponseDTO event  = this.eventService.getEvent(eventId);
             System.out.println(event);
 
@@ -91,7 +92,7 @@ public class EventController {
     }
     @PreAuthorize(("hasRole('CLUB_ADMIN')"))
     @PatchMapping
-    public ResponseEntity<ApiResponse> updateEvent(@RequestBody @Valid Event event){
+    public ResponseEntity<ApiResponse> updateEvent(@ModelAttribute @Valid EventRegistrationDTO event){
         try{
             int id = this.eventService.updateEvent(event);
             return ResponseEntity.status(200).body(new ApiResponse(200,id,"Event updated successfully..."));

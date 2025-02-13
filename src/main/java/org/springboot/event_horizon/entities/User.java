@@ -55,6 +55,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private Set<Vote> votes;
 
+    private String imageUrl;
+
     @Override
     public String toString() {
         return "User{" +

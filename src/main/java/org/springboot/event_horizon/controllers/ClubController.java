@@ -38,8 +38,8 @@ public class ClubController{
         }
     }
     @PreAuthorize("hasRole('USER')")
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse> registerClubRequest(@RequestBody @Valid RegisterClubRequest request ) {
+    @PostMapping(path = "/register")
+    public ResponseEntity<ApiResponse> registerClubRequest(@ModelAttribute @Valid RegisterClubRequest request ) {
         try {
             UserPrincipal principal = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
             String email = principal.getUsername();
@@ -58,18 +58,27 @@ public class ClubController{
     //Entire club details shouldn't be sent as the output change it
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @PostMapping("/{clubId}/members")
-    public ResponseEntity<ApiResponse> addClubMembers(
+    public ResponseEntity<ApiResponse> addClubMember(
             @PathVariable int clubId,
-            @RequestBody @Valid List<AddMembersRequestDTO> memberRequests   ) throws ApiException {
+            @RequestBody @Valid AddClubMembersRequestDTO memberRequest ){
         try{
-            BatchAddClubMemberRequestDTO response = this.clubService.addClubMembers(clubId,memberRequests);
-            return ResponseEntity.status(201).body(new ApiResponse(201, response, "Member added successfully"));
+            ClubMemberDTO clubMember = this.clubService.addClubMember(clubId,memberRequest);
+            return ResponseEntity.status(201).body(new ApiResponse(201, clubMember, "Member added successfully"));
         }catch (ApiException e){
-                return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
         }
     }
 
-
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PatchMapping("/members")
+    public ResponseEntity<ApiResponse> editClubMember(@RequestBody  ClubMemberDTO memberRequest ){
+        try{
+            ClubMemberDTO clubMember = this.clubService.editClubMember(memberRequest);
+            return ResponseEntity.ok().body(new ApiResponse(200, clubMember, "Member edited successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
+        }
+    }
 
     @GetMapping("/{clubId}/events")
     public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId){
@@ -82,7 +91,7 @@ public class ClubController{
     }
 
     @GetMapping("/{clubId}")
-    public ResponseEntity<ApiResponse> getClubDetails(@PathVariable int clubId) {
+    public ResponseEntity<ApiResponse> getAllClubDetails(@PathVariable int clubId) {
         try{
             System.out.println(clubId);
             ClubDetailsDTO clubDetailsDTO = this.clubService.getClubDetails(clubId);
@@ -94,13 +103,45 @@ public class ClubController{
     }
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @GetMapping("/pending-registrations")
-    public ResponseEntity<ApiResponse> getPendingEventRegistration()  {
+    public ResponseEntity<ApiResponse> getPendingEventRegistration(){
         try {
             User currentUser = userService.getLoggedInUser();
             List<RegistrationDTO> pendingRegistrations = this.clubService.getAllPendingEventRegistrationsOfClub(currentUser.getEmail());
             System.out.println(pendingRegistrations);
             return ResponseEntity.status(200).body(new ApiResponse(200,pendingRegistrations,"Pending Registrations of all events  fetched Successfully"));
         } catch (ApiException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PatchMapping("/{clubId}")
+    public ResponseEntity<ApiResponse> updateClubDetails(@ModelAttribute @Valid RegisterClubRequest clubRequest , @PathVariable int clubId) throws ApiException {
+        try{
+            int id = this.clubService.updateClubDetails(clubId,clubRequest);
+            return ResponseEntity.ok().body(new ApiResponse(200,id,"Club updated successfully"));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @DeleteMapping("/{clubId}")
+    public ResponseEntity<ApiResponse> deleteClub(@PathVariable int clubId) throws ApiException {
+        try{
+            int id = this.clubService.deleteClub(clubId);
+            return ResponseEntity.ok().body(new ApiResponse(200,id,"Your Club has been deleted successfully... Please login again..."));
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("members/{id}")
+    public ResponseEntity<ApiResponse> deleteMember(@PathVariable int id) throws ApiException {
+        try{
+            this.clubService.deleteClubMember(id);
+            return ResponseEntity.ok().body(new ApiResponse(200 , id , "Member deleted successfully"));
+
+        }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
     }

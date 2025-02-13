@@ -27,7 +27,7 @@ public class Club {
     private String name;
     @Column(name = "club_description")
     private String description;
-    @Column(name = "club_icon")
+    @Column(name = "club_icon" , length = 2048)
     private String icon;
 
     @Column(name = "club_registration_status")

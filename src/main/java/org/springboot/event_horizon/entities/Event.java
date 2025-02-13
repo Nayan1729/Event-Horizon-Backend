@@ -30,14 +30,14 @@
         private String title;
 
         @NotNull(message = "Event description is required.")
-        @Column(name = "event_description", nullable = false)
+        @Column(name = "event_description", nullable = false , length = 2048)
         private String description;
 
         @NotNull(message = "Event location is required.")
         @Column(name = "event_location", nullable = false)
         private String location;
 
-        @Column(name = "image_url" , nullable = false)
+        @Column(name = "image_url" , nullable = false , length = 2048)
         private String imageUrl;
 
         @NotNull(message = "Event date is required.")

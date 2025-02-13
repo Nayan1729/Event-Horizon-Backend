@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 public class ClubMember {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private int id ;
+    private int id ; //
 
     @JsonIgnoreProperties("clubMembers")
     @ManyToOne
@@ -26,10 +26,10 @@ public class ClubMember {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user ;
+    private User user ; // name , email
 
     @NotNull
-    String designation;
+    String designation; //
 
-    private LocalDateTime joinedAt  = LocalDateTime.now() ;
+    private LocalDateTime joinedAt  = LocalDateTime.now() ; //
 }

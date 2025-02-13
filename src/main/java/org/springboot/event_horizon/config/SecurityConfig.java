@@ -48,6 +48,8 @@ public class SecurityConfig  {
                                         .requestMatchers("/api/v1/login").permitAll()
                                         .requestMatchers("/api/v1/verify").permitAll()
                                         .requestMatchers("/api/v1/resend-email").permitAll()
+                                        .requestMatchers("/api/v1/upload-image").permitAll()
+
                                         .anyRequest().authenticated()
                         )
                         .cors(c->c.configurationSource(customCorsConfiguration))

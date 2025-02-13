@@ -16,5 +16,5 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
 
     Optional<List<Club>> findByStatus(String status);
 
-    Club findByEmail(@Email String email);
+    Optional<Club> findByEmail(@Email String email);
 }

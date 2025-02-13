@@ -1,10 +1,12 @@
 package org.springboot.event_horizon.controllers;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springboot.event_horizon.dtos.AuthDTO;
 import org.springboot.event_horizon.dtos.OtpDto;
 import org.springboot.event_horizon.dtos.ResendEmailDTO;
 import org.springboot.event_horizon.entities.User;
+import org.springboot.event_horizon.services.AwsService;
 import org.springboot.event_horizon.services.UserService;
 import org.springboot.event_horizon.utilities.ApiException;
 import org.springboot.event_horizon.utilities.ApiResponse;
@@ -17,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +28,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1")
+@RequiredArgsConstructor
 public class UserController {
 
     @Autowired
@@ -34,18 +38,8 @@ public class UserController {
     @Autowired
     ApplicationContext context;
 
-        @GetMapping("/user/profile")
-        @PreAuthorize("hasRole('ADMIN')")
-        public String userProfile() {
-            return "Welcome to User Profile!";
-        }
+    private final AwsService awsService;
 
-    /**
-     * Registers a new user.
-     *
-     * @param user The user data to register.
-     * @return The registered user.
-     */
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody User user) {
@@ -134,4 +128,16 @@ public class UserController {
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }
     }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<ApiResponse> uploadImage(@RequestParam("file") MultipartFile file){
+        try {
+            String url = this.awsService.saveImageToS3(file);
+            return ResponseEntity.ok().body(new ApiResponse(200,url,"Image uploaded successfully"));
+
+        }catch (ApiException e){
+            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+        }
+    }
+
 }

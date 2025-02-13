@@ -11,4 +11,5 @@ public class ClubMemberDTO{
     private String email;
     private String  designation;
     private LocalDateTime joinedAt;
+    private String imageUrl;
 }
