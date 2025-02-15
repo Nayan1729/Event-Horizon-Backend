@@ -80,11 +80,21 @@ public class ClubController{
         }
     }
 
-    @GetMapping("/{clubId}/events")
-    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId){
+//    @GetMapping("/{clubId}/events")
+//    public ResponseEntity<ApiResponse> getEvents(@PathVariable int clubId){
+//        try{
+//            Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
+//            return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
+//        }catch (ApiException e){
+//            return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
+//        }
+//    }
+
+    @GetMapping("/ongoing-club-events")
+    public ResponseEntity<ApiResponse> getOngoingEvents(){
         try{
-            Set<EventSummaryDTO> events = this.clubService.getClubEvents(clubId);
-            return ResponseEntity.status(200).body(new ApiResponse(200,events,"Events fetched Successfully"));
+            List<EventSummaryDTO> ongoingEventList = this.clubService.getAllClubEventsByStatus("ONGOING");
+            return ResponseEntity.ok().body(new ApiResponse(200,ongoingEventList,"All ongoing events fetched Successfully"));
         }catch (ApiException e){
             return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(), null, e.getMessage()));
         }

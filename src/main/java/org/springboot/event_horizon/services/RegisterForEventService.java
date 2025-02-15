@@ -2,6 +2,7 @@ package org.springboot.event_horizon.services;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springboot.event_horizon.dtos.AttendanceDTO;
 import org.springboot.event_horizon.dtos.RegisterForEventDTO;
 import org.springboot.event_horizon.entities.Event;
 import org.springboot.event_horizon.entities.RegisterForEvent;
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,8 @@ public class RegisterForEventService {
     @Lazy
     private ClubService clubService;
     private final ModelMapper modelMapper;
+    @Autowired
+    private AwsService awsService;
 
     public void registerForEvent(int eventId, RegisterForEvent registerForEvent) throws ApiException {
         User user = this.userService.getLoggedInUser();
@@ -92,4 +96,49 @@ public List<RegisterForEventDTO> getAllRegistrationsByStatus(String status,int e
     public boolean isUserRegisteredForEvent(User loggedInUser,int eventId){
         return this.registerForEventRepository.existsByUserIdAndEventIdAndStatus(loggedInUser.getId() , eventId , "ACCEPTED");
     }
+
+    public List<AttendanceDTO> getUnattendedRegistrations(int eventId) throws ApiException {
+        User currentUser = this.userService.getLoggedInUser();
+         Event event = this.eventRepository.findById(eventId).orElseThrow(()->new ApiException("No such event found" , 404));
+         if(!event.getClub().getEmail().equals(currentUser.getEmail())){
+             throw new ApiException("You are not allowed to make this request" , 400);
+         }
+        List <RegisterForEvent> registerForEvents = this.registerForEventRepository.findByStatusAndEventId("APPROVED" , eventId )
+                .orElseThrow(()->new ApiException("No registrations found" , 404));
+         String title = event.getTitle();
+         List<AttendanceDTO> attendances = new ArrayList<>();
+        registerForEvents.stream().forEach(register->{
+            AttendanceDTO attendance = new AttendanceDTO();
+            attendance.setId(register.getId());
+            attendance.setName(register.getUser().getName());
+            attendance.setEmail(register.getUser().getEmail());
+            attendance.setTitle(title);
+            attendance.setImageUrl(awsService.getImageUrl(register.getUser().getImageUrl()));
+            attendance.setAttendanceStatus(register.isAttended());
+            attendances.add(attendance);
+        });
+        return attendances;
+    }
+
+    public AttendanceDTO acceptAttendance(int registerId) throws ApiException {
+        RegisterForEvent registerForEvent   = this.registerForEventRepository.findById(registerId)
+                .orElseThrow(()->new ApiException("No such registration found" , 404));
+        if(!registerForEvent.getStatus().equals("APPROVED")){
+            throw new ApiException("Your registration was not accepted", 400);
+        }
+        Event event = registerForEvent.getEvent();
+        registerForEvent.setAttended(true);
+        event.setTotalAttendance(event.getTotalAttendance() + 1);
+        System.out.println(registerForEvent.getEvent().getTotalAttendance());
+         this.registerForEventRepository.save(registerForEvent);
+         AttendanceDTO attendance = new AttendanceDTO();
+         attendance.setId(registerForEvent.getEvent().getId());
+         attendance.setName(registerForEvent.getUser().getName());
+         attendance.setEmail(registerForEvent.getUser().getEmail());
+         attendance.setTitle(registerForEvent.getEvent().getTitle());
+         attendance.setImageUrl(awsService.getImageUrl(registerForEvent.getUser().getImageUrl()));
+         attendance.setAttendanceStatus(registerForEvent.isAttended());
+         return attendance;
+    }
 }
+

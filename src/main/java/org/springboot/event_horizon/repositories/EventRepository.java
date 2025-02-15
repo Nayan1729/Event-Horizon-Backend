@@ -1,5 +1,6 @@
 package org.springboot.event_horizon.repositories;
 
+import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,6 @@ public interface EventRepository extends JpaRepository<Event, Integer> {
     Optional<List<Event>>findAllByClubId(@Param("clubId") int clubId);
 
     Optional<List<Event>> findByStatus(String status);
+
+    Optional<List<Event>> findAllByClubAndStatus(Club clubId , String status);
 }

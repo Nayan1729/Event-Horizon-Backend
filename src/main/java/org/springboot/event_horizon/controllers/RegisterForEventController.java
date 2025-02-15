@@ -1,6 +1,7 @@
     package org.springboot.event_horizon.controllers;
 
     import lombok.RequiredArgsConstructor;
+    import org.springboot.event_horizon.dtos.AttendanceDTO;
     import org.springboot.event_horizon.dtos.RegisterForEventDTO;
     import org.springboot.event_horizon.entities.RegisterForEvent;
     import org.springboot.event_horizon.services.RegisterForEventService;
@@ -80,6 +81,8 @@
                 return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
             }
         }
+
+
         @PreAuthorize("hasRole('CLUB_ADMIN')")
         @GetMapping("/{registerId}/reject")
         public ResponseEntity<ApiResponse> rejectRegistration(@PathVariable int registerId){
@@ -91,4 +94,24 @@
             }
         }
 
+        @GetMapping("/{eventId}/not-attended")
+        public ResponseEntity<ApiResponse> getAllEventNotAttendedRegistrations(@PathVariable int eventId){
+            try{
+                List<AttendanceDTO> attendanceDTOS = this.registerForEventService.getUnattendedRegistrations(eventId);
+                return ResponseEntity.ok().body(new ApiResponse(200,attendanceDTOS,"All the event's not attended registrations fetched"));
+            }catch (ApiException e){
+                return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
+            }
+        }
+
+        @PreAuthorize("hasRole('CLUB_ADMIN')")
+        @GetMapping("/accept-registrations/{registrationId}")
+        public ResponseEntity<ApiResponse> acceptRegistration(@PathVariable int registrationId){
+            try{
+                AttendanceDTO attendance = this.registerForEventService.acceptAttendance(registrationId);
+                return ResponseEntity.ok().body(new ApiResponse(200,attendance,attendance.getName()+" checked in successfully"));
+            }catch (ApiException e){
+                return ResponseEntity.status(e.getStatusCode()).body(new ApiResponse(e.getStatusCode(),null,e.getMessage()));
+            }
+        }
     }

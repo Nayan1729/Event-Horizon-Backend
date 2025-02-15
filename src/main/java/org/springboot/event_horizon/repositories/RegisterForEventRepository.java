@@ -16,4 +16,6 @@ public interface RegisterForEventRepository extends JpaRepository<RegisterForEve
     public Optional<RegisterForEvent> findByUserIdAndEventId(int user_id, int event_id);
 
     boolean existsByUserIdAndEventIdAndStatus(int id, int eventId, String accepted);
+
+    List<RegisterForEvent> findByStatusAndEventIdAndAttended(String approved, int eventId, boolean b);
 }

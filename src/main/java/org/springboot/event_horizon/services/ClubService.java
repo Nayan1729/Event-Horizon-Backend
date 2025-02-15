@@ -92,33 +92,33 @@ public class ClubService{
         return approvedClub;
     }
 
-    public Set<EventSummaryDTO> getClubEvents(int clubId) throws ApiException {
-        Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
-        if(!existingClub.isPresent()){
-            throw new ApiException("No club with the given id found",404);
-        }
-        Club club = existingClub.get();
-        Set<Event> events = club.getEvents();
-        if(events.isEmpty()){
-            throw new ApiException("No club events found",404);
-        }
-
-        // Filter and map pending events
-        return events.stream()
-                .map(event -> {
-                    int pendingCount = (int) event.getRegisterForEvents().stream()
-                            .filter(registration -> "PENDING".equals(registration.getStatus()))
-                            .count();
-
-                        EventSummaryDTO eventSummary = modelMapper.map(event, EventSummaryDTO.class);
-                        eventSummary.setPendingRegistrations(pendingCount); // Set the derived field
-                        return eventSummary;
-
-                     // Skip events with no pending registrations
-                })
-                .filter(Objects::nonNull) // Remove null values from skipped events
-                .collect(Collectors.toSet());
-    }
+//    public Set<EventSummaryDTO> getClubEvents(int clubId) throws ApiException {
+//        Optional<Club> existingClub = this.clubRepository.findByClubId(clubId);
+//        if(!existingClub.isPresent()){
+//            throw new ApiException("No club with the given id found",404);
+//        }
+//        Club club = existingClub.get();
+//        Set<Event> events = club.getEvents();
+//        if(events.isEmpty()){
+//            throw new ApiException("No club events found",404);
+//        }
+//
+//        // Filter and map pending events
+//        return events.stream()
+//                .map(event -> {
+//                    int pendingCount = (int) event.getRegisterForEvents().stream()
+//                            .filter(registration -> "PENDING".equals(registration.getStatus()))
+//                            .count();
+//
+//                        EventSummaryDTO eventSummary = modelMapper.map(event, EventSummaryDTO.class);
+//                        eventSummary.setPendingRegistrations(pendingCount); // Set the derived field
+//                        return eventSummary;
+//
+//                     // Skip events with no pending registrations
+//                })
+//                .filter(Objects::nonNull) // Remove null values from skipped events
+//                .collect(Collectors.toSet());
+//    }
     public ClubMemberDTO addClubMember(int clubId , AddClubMembersRequestDTO addClubMembersRequestDTO) throws ApiException {
         User currentUser  = userService.getLoggedInUser();
         Club club = this.clubRepository.findByClubId(clubId).get();
@@ -162,7 +162,7 @@ public class ClubService{
         if(email == null || email.trim().isEmpty()){
             throw new ApiException("Email cannot be empty",400);
         }
-        return clubRepository.findByEmail(email).get();
+        return clubRepository.findByEmail(email).orElseThrow(()->new ApiException("No club with the given email doesn't exist",404));
     }
 
     public ClubDetailsDTO getClubDetails(int clubId) throws ApiException {
@@ -239,7 +239,7 @@ public class ClubService{
         }
         this.clubRepository.save(club);
         return club.getClubId();
-    } 
+    }
     public int deleteClub(int clubId) throws ApiException {
         Club club = this.clubRepository.findByClubId(clubId).orElseThrow(()->new ApiException("No club found with the given id",404));
         User user = this.userService.getLoggedInUser();
@@ -295,5 +295,11 @@ public class ClubService{
         memberRequest.setImageUrl(editedMember.getUser().getImageUrl());
 
         return memberRequest;
+    }
+
+    public List<EventSummaryDTO> getAllClubEventsByStatus(String status) throws ApiException {
+        User currentUser = this.userService.getLoggedInUser();
+        Club club = this.getClubByEmail(currentUser.getEmail());
+        return eventService.getAllClubsEventsByStatus(club.getClubId(), status);
     }
 }

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springboot.event_horizon.dtos.EventRegistrationDTO;
 import org.springboot.event_horizon.dtos.EventResponseDTO;
+import org.springboot.event_horizon.dtos.EventSummaryDTO;
 import org.springboot.event_horizon.entities.Club;
 import org.springboot.event_horizon.entities.Event;
 import org.springboot.event_horizon.entities.User;
@@ -103,6 +104,22 @@ public class EventService {
                         return e;
                     }).collect(Collectors.toList());
     }
+
+    public List<EventSummaryDTO> getAllClubsEventsByStatus(int clubId , String status) throws ApiException {
+        Club club = this.clubRepository.findByClubId(clubId)
+                .orElseThrow(() -> new ApiException("No club with the given id found" , 404));
+
+        List<Event> clubEvents = this.eventRepository.findAllByClubAndStatus(club,status)
+                .orElseThrow(() -> new ApiException("No events found for the given club found" , 404));
+        return clubEvents
+                .stream()
+                .map(event -> {
+                    EventSummaryDTO e = modelMapper.map(event, EventSummaryDTO.class);
+                    e.setImageUrl(awsService.getImageUrl(event.getImageUrl()));
+                    return e;
+                }).collect(Collectors.toList());
+    }
+
     public List<EventResponseDTO> getAllEvents() throws ApiException {
         List <Event> upcomingEvents =  this.eventRepository.findAll();
         User user = this.userService.getLoggedInUser();

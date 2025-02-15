@@ -22,7 +22,8 @@
     @Table(name = "events")
     public class Event {
         @Id
-        @Column(name = "id")@GeneratedValue(strategy = GenerationType.IDENTITY)
+        @Column(name = "id")
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         private int id;
 
         @NotNull(message = "Event title is required.")
@@ -30,14 +31,14 @@
         private String title;
 
         @NotNull(message = "Event description is required.")
-        @Column(name = "event_description", nullable = false , length = 2048)
+        @Column(name = "event_description", nullable = false, length = 2048)
         private String description;
 
         @NotNull(message = "Event location is required.")
         @Column(name = "event_location", nullable = false)
         private String location;
 
-        @Column(name = "image_url" , nullable = false , length = 2048)
+        @Column(name = "image_url", nullable = false, length = 2048)
         private String imageUrl;
 
         @NotNull(message = "Event date is required.")
@@ -52,7 +53,7 @@
         @Column(name = "end_time", nullable = false)
         private LocalTime endTime;
 
-        @Column(name = "event_status" , nullable = false)
+        @Column(name = "event_status", nullable = false)
         private String status = "UPCOMING";
 
         @Column(name = "completed_Registrations")
@@ -69,11 +70,11 @@
         @JoinColumn(name = "club_id")
         private Club club;
 
-        @OneToMany( cascade = CascadeType.ALL,mappedBy ="event")
+        @OneToMany(cascade = CascadeType.ALL, mappedBy = "event")
         @JsonIgnoreProperties("event")
         private Set<RegisterForEvent> registerForEvents;
 
-        @OneToMany(cascade = CascadeType.ALL , fetch = FetchType.LAZY)
+        @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
         private List<Speaker> speakers;
 
     }
